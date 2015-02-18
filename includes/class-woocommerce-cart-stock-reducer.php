@@ -31,6 +31,16 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	}
 
+	/**
+	 * Called via the 'woocommerce_update_cart_validation' filter to validate if the quantity can be updated
+	 *
+	 * @param $valid
+	 * @param string $cart_item_key Specific key for the row in users cart
+	 * @param array $values Item information
+	 * @param int $quantity Quantity of item to be added
+	 *
+	 * @return bool true if quantity change to cart is valid
+	 */
 	public function update_cart_validation( $valid, $cart_item_key, $values, $quantity ) {
 		$available = $this->get_stock_available( $values[ 'product_id' ], $values[ 'data' ], $cart_item_key );
 		if ( $available < $quantity ) {
@@ -40,6 +50,16 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return $valid;
 	}
 
+	/**
+	 * Called via the 'woocommerce_add_to_cart_validation' filter to validate if an item can be added to cart
+	 * This will likely only be called if someone hasn't refreshed the item page when an item goes unavailable
+	 *
+	 * @param $valid
+	 * @param int $product_id Item to be added
+	 * @param int $quantity Quantity of item to be added
+	 *
+	 * @return bool true if addition to cart is valid
+	 */
 	public function add_cart_validation( $valid, $product_id, $quantity ) {
 		$available = $this->get_stock_available( $product_id );
 		if ( $available < $quantity ) {
@@ -51,6 +71,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 
 	/**
+	 * Return the quantity back to get_availability()
+	 *
 	 * @param array $info
 	 * @param object $product WooCommerce WC_Product based class
 	 *
@@ -112,6 +134,15 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return $info;
 	}
 
+	/**
+	 * Get the quantity available of a specific item
+	 *
+	 * @param $item The item ID
+	 * @param object $product WooCommerce WC_Product based class, if not passed the item ID will be used to query
+	 * @param string $ignore Cart Item Key to ignore in the count
+	 *
+	 * @return int Quantity of items in stock
+	 */
 	public function get_stock_available( $item, $product = null, $ignore = null ) {
 		if ( null === $product ) {
 			$product = wc_get_product( $item );
@@ -138,6 +169,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * Search through all sessions and count quantity of $item in all carts
 	 *
 	 * @param int $item WooCommerce item ID
+	 * @param string $ignore Cart Item Key to ignore in the count
 	 *
 	 * @return int Total number of items
 	 */
