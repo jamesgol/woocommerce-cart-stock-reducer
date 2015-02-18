@@ -6,8 +6,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function __construct() {
-		global $woocommerce;
-
 		$this->id                 = 'woocommerce-cart-stock-reducer';
 		$this->method_title       = __( 'WooCommerce Cart Stock Reducer', 'woocommerce-cart-stock-reducer' );
 		$this->method_description = __( 'Allow WooCommerce inventory stock to be reduced when adding items to cart', 'woocommerce-cart-stock-reducer' );
@@ -137,7 +135,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	/**
 	 * Get the quantity available of a specific item
 	 *
-	 * @param $item The item ID
+	 * @param int $item The item ID
 	 * @param object $product WooCommerce WC_Product based class, if not passed the item ID will be used to query
 	 * @param string $ignore Cart Item Key to ignore in the count
 	 *
