@@ -379,7 +379,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				'type'              => 'text',
 				'description'       => __( 'Enter alternate text to be displayed when there are items in stock but held in an existing cart.', 'woocommerce-cart-stock-reducer' ),
 				'desc_tip'          => true,
-				'default'           => ''
+				'default'           => "Sorry, but there's a pending order for this item. It's not available for purchase."
 			),
 			'expire_items' => array(
 				'title'             => __( 'Expire Items', 'woocommerce-cart-stock-reducer' ),
@@ -391,9 +391,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			'expire_time' => array(
 				'title'             => __( 'Expire Time', 'woocommerce-cart-stock-reducer' ),
 				'type'              => 'text',
-				// @todo Need better explanation about valid times (ie: anything strtotime will take)
 				'description'       => __( 'How long before item expires from cart', 'woocommerce-cart-stock-reducer' ),
 				'desc_tip'          => true,
+				'placeholder'       => 'Examples: 10 minutes, 1 hour, 1 day, 1 week ',
 				'default'           => ''
 			),
 			'expire_custom_key' => array(

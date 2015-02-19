@@ -3,8 +3,8 @@ Contributors: jamesgol
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY
 Tags: woocommerce
 Requires at least: 4.0
-Tested up to: 4.1
-Stable tag: 0.1
+Tested up to: 4.1.1
+Stable tag: 0.5
 WC requires at least: 2.2
 WC tested up to: 2.3.4
 License: GPLv2 or later
@@ -31,6 +31,8 @@ Please submit bug reports, feature requests, and pull requests via the [GitHub r
 == Installation ==
 
 1. Upload plugin and activate through the 'Plugins' menu in WordPress
+1. Configure plugin specific settings under the WooCommerce->Settings->Integration admin page
+
 
 == Frequently Asked Questions ==
 
@@ -43,9 +45,16 @@ a "Item is no longer available" message.
 
 They will receive a "Quantity requested not available" message and their original quantity will be retained.
 
+= What adjustments need to be made to caching? =
+
+We recommend turning off page and database caching for pages affected by this plugin. For example, assuming your site 
+uses the default Woocommerce "shop" page and W3 Total Cache, add "shop/*" (without the quotes) to "Never cache the 
+following pages:" at the page cache and database cache settings.
+
+
 == Changelog ==
 
-= Dev =
+= 0.5 =
 Handle variable products
 Add cart expiration
 
@@ -58,3 +67,5 @@ First initial release
 * Test with backordered products
 * Setup sanitizer for admin fields
 * Look into adding ajax and mini-cart notices
+* Take some screenshots for wordpress.org
+* Add option of displaying when an item might be available in addition to the 'stock_pending' message
