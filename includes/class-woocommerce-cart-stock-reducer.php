@@ -28,7 +28,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		// Filters related to stock quantity
 		add_filter( 'woocommerce_get_availability', array( $this, 'get_avail' ), 10, 2 );
 		add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
-		add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 3 );
+		add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
+		add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
+		add_action( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
 
 		// Actions/Filters related to cart item expiration
 		add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 2 );
@@ -39,6 +41,27 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	}
 
+	/**
+	 * Called from hook 'woocommerce_add_to_cart_redirect', odd choice but it gets called after a succesful save of an item
+	 * Need to force the session to be saved so the quantity can be correctly calculated for the page load in this same session
+	 */
+	public function force_session_save() {
+		WC()->session->save_data();
+	}
+
+	/**
+	 * Called from 'woocommerce_quantity_input_args' filter to adjust the maximum quantity of items a user can select
+	 *
+	 * @param array $args
+	 * @param object $product WC_Product type object
+	 *
+	 * @return array
+	 */
+	public function quantity_input_args( $args, $product ) {
+		$args[ 'max_value' ] = $this->get_stock_available( $product->id, $product->variation_id, $product, true );
+
+		return $args;
+	}
 	/**
 	 * Called by 'woocommerce_check_cart_items' action to expire items from cart
 	 */
@@ -53,6 +76,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 	}
 
+	/**
+	 * @param $cart_id
+	 * @param null $cart
+	 */
 	protected function remove_expired_item( $cart_id, $cart = null ) {
 		if ( null === $cart ) {
 			// This should never happen, but better to be safe
@@ -103,6 +130,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	/**
 	 * Called via the 'woocommerce_update_cart_validation' filter to validate if the quantity can be updated
+	 * The frontend should keep users from selecting a higher than allowed number, but don't trust those pesky users!
 	 *
 	 * @param $valid
 	 * @param string $cart_item_key Specific key for the row in users cart
@@ -112,7 +140,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return bool true if quantity change to cart is valid
 	 */
 	public function update_cart_validation( $valid, $cart_item_key, $values, $quantity ) {
-		$available = $this->get_stock_available( $values[ 'product_id' ], $values[ 'data' ], $cart_item_key );
+		$available = $this->get_stock_available( $values[ 'product_id' ], $values[ 'variation_id' ], $values[ 'data' ], true );
 		if ( $available < $quantity ) {
 			wc_add_notice( __( 'Quantity requested not available', 'woocommerce-cart-stock-reducer' ), 'error' );
 			$valid = false;
@@ -130,15 +158,46 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 *
 	 * @return bool true if addition to cart is valid
 	 */
-	public function add_cart_validation( $valid, $product_id, $quantity ) {
-		$available = $this->get_stock_available( $product_id );
-		if ( $available < $quantity ) {
-			wc_add_notice( __( 'Item is no longer available', 'woocommerce-cart-stock-reducer' ), 'error' );
-			$valid = false;
+	public function add_cart_validation( $valid, $product_id, $quantity, $variation_id = null, $variations = array() ) {
+		if ( $this->item_managing_stock( $product_id, $variation_id ) ) {
+			$available = $this->get_stock_available( $product_id, $variation_id );
+			if ( $available < $quantity ) {
+				wc_add_notice( __( 'Item is no longer available', 'woocommerce-cart-stock-reducer' ), 'error' );
+				$valid = false;
+			}
+
 		}
 		return $valid;
 	}
 
+	/**
+	 * Determine which item is in control of managing the inventory
+	 * @param int $product_id
+	 * @param int $variation_id
+	 *
+	 * @return bool|int
+	 */
+	public function item_managing_stock( $product_id, $variation_id = null ) {
+		$id = false;
+
+		if ( ! empty( $variation_id ) ) {
+			// First check variation
+			$product = wc_get_product( $variation_id );
+			$managing_stock = $product->managing_stock();
+			if ( true === $managing_stock ) {
+				$id = $variation_id;
+			} elseif ( 'parent' ) {
+				$id = $product_id;
+			}
+		} else {
+			$product = wc_get_product( $product_id );
+			if ( true === $product->managing_stock() ) {
+				$id = $product_id;
+			}
+		}
+
+		return $id;
+	}
 
 	/**
 	 * Return the quantity back to get_availability()
@@ -151,7 +210,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function get_avail( $info, $product ) {
 
 		if ( 'in-stock' === $info[ 'class' ] ) {
-			$available = $this->get_stock_available( $product->id, $product );
+			$available = $this->get_stock_available( $product->id, $product->variation_id, $product );
 
 			if ( 0 < $available ) {
 				// Parts taken from WooCommerce core in order to keep text identical
@@ -209,28 +268,28 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 *
 	 * @return int Quantity of items in stock
 	 */
-	public function get_stock_available( $item, $product = null, $ignore = null ) {
+	public function get_stock_available( $product_id, $variation_id = null, $product = null, $ignore = false ) {
 		$stock = 0;
 
+		$id = $this->item_managing_stock( $product_id, $variation_id );
+
 		if ( null === $product ) {
-			$product = wc_get_product( $item );
+			$product = wc_get_product( $id );
 		}
-		if ( $is_managing_stock = $product->managing_stock() ) {
-			if ( true === $is_managing_stock && isset( $product->variation_id ) ) {
+		$stock = $product->get_total_stock();
+		if ( false !== $id ) {
+			if ( $id === $variation_id ) {
 				$product_field = 'variation_id';
-				$product_id = $product->variation_id;
 			} else {
 				$product_field = 'product_id';
-				$product_id = $product->id;
 			}
-			$stock = $product->get_total_stock();
 
 			if ( ! empty( $this->min_no_check  ) && $this->min_no_check < (int) $stock ) {
 				// Don't bother searching through all the carts if there is more than 'min_no_check' quantity
 				return $stock;
 			}
 
-			$in_carts = $this->quantity_in_carts( $product_id, $product_field, $ignore );
+			$in_carts = $this->quantity_in_carts( $id, $product_field, $ignore );
 			if ( 0 < $in_carts ) {
 				$stock = ( $stock - $in_carts );
 				// Trick WooCommerce into thinking there is no stock available, this does NOT get updated in the DB
@@ -245,11 +304,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 *
 	 * @param int $item WooCommerce item ID
 	 * @param string $field Which field to use to match.  'variation_id' or 'product_id'
-	 * @param string $ignore Cart Item Key to ignore in the count
+	 * @param bool $ignore true if active users count should be ignored
 	 *
 	 * @return int Total number of items
 	 */
-	public function quantity_in_carts( $item, $field = 'product_id', $ignore = null ) {
+	public function quantity_in_carts( $item, $field = 'product_id', $ignore = false ) {
 		global $wpdb;
 		$quantity = 0;
 		$item = (int) $item;
@@ -263,6 +322,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$results = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE option_name LIKE '_wc_session_%' AND option_value LIKE '%\"{$field}\";i:{$item};%'", OBJECT );
 		if ( $results ) {
 			foreach ( $results as $result ) {
+				if ( true === $ignore && $result->option_name === '_wc_session_' . WC()->session->get_customer_id() ) {
+					continue;
+				}
 				$session = unserialize( $result->option_value );
 				if ( isset( $session[ 'cart' ] ) ) {
 					$cart = unserialize( $session[ 'cart' ] );
@@ -271,7 +333,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 							// Skip items that are expired in carts
 							continue;
 						}
-						if ( $key !== $ignore && $item === $row[ $field ] ) {
+						if ( $item === $row[ $field ] ) {
+							//$key !== $ignore &&
+							// Ignore doesn't work as I thought
 							$quantity += $row[ 'quantity' ];
 						}
 					}
