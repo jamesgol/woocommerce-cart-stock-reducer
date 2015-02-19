@@ -45,10 +45,14 @@ They will receive a "Quantity requested not available" message and their origina
 
 == Changelog ==
 
+= Dev =
+Handle variable products
+
 = 0.1 =
 First initial release
 
 == TODO ==
 
-* Handle variable products
 * Test with backordered products
+* Add cart expiration
+* Setup sanitizer for admin fields

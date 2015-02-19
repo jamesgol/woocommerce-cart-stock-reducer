@@ -145,7 +145,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( null === $product ) {
 			$product = wc_get_product( $item );
 		}
-		if ( $product->managing_stock() ) {
+		if ( $is_managing_stock = $product->managing_stock() ) {
+			if ( true === $is_managing_stock && isset( $product->variation_id ) ) {
+				$product_field = 'variation_id';
+				$product_id = $product->variation_id;
+			} else {
+				$product_field = 'product_id';
+				$product_id = $product->id;
+			}
 			$stock = $product->get_total_stock();
 
 			if ( ( $min_no_check = $this->get_option( 'min_no_check', false ) ) && $min_no_check < (int) $stock ) {
@@ -153,7 +160,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				return $stock;
 			}
 
-			$in_carts = $this->quantity_in_carts( $product->id, $ignore );
+			$in_carts = $this->quantity_in_carts( $product_id, $product_field, $ignore );
 			if ( 0 < $in_carts ) {
 				$stock      = ( $stock - $in_carts );
 				$product->stock = $stock;
@@ -167,11 +174,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * Search through all sessions and count quantity of $item in all carts
 	 *
 	 * @param int $item WooCommerce item ID
+	 * @param string $field Which field to use to match.  'variation_id' or 'product_id'
 	 * @param string $ignore Cart Item Key to ignore in the count
 	 *
 	 * @return int Total number of items
 	 */
-	public function quantity_in_carts( $item, $ignore = null ) {
+	public function quantity_in_carts( $item, $field = 'product_id', $ignore = null ) {
 		global $wpdb;
 		$quantity = 0;
 		$item = (int) $item;
@@ -182,14 +190,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		 * that using get_option and an external cache will be faster on a heavy site.
 		 * Need to benchmark... In my free time.
     	*/
-		$results = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE option_name LIKE '_wc_session_%' AND option_value LIKE '%\"product_id\";i:{$item};%'", OBJECT );
+		$results = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE option_name LIKE '_wc_session_%' AND option_value LIKE '%\"{$field}\";i:{$item};%'", OBJECT );
 		if ( $results ) {
 			foreach ( $results as $result ) {
 				$session = unserialize( $result->option_value );
 				if ( isset( $session[ 'cart' ] ) ) {
 					$cart = unserialize( $session[ 'cart' ] );
 					foreach ( $cart as $key => $row ) {
-						if ( $key !== $ignore && $item === $row[ 'product_id'] ) {
+						if ( $key !== $ignore && $item === $row[ $field ] ) {
 							$quantity += $row[ 'quantity' ];
 						}
 					}
