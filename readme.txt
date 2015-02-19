@@ -47,12 +47,14 @@ They will receive a "Quantity requested not available" message and their origina
 
 = Dev =
 Handle variable products
+Add cart expiration
 
 = 0.1 =
 First initial release
 
 == TODO ==
 
+* Make expiration strings nicer
 * Test with backordered products
-* Add cart expiration
 * Setup sanitizer for admin fields
+* Look into adding ajax and mini-cart notices
