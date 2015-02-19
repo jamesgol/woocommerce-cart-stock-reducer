@@ -1,6 +1,6 @@
 === WooCommerce Cart Stock Reducer ===
 Contributors: jamesgol
-Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V7A9YZZAUUJQN
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY
 Tags: woocommerce
 Requires at least: 4.0
 Tested up to: 4.1
