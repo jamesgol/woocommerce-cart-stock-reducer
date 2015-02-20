@@ -7,7 +7,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
-		$this->method_title       = __( 'WooCommerce Cart Stock Reducer', 'woocommerce-cart-stock-reducer' );
+		$this->method_title       = __( 'Cart Stock Reducer', 'woocommerce-cart-stock-reducer' );
 		$this->method_description = __( 'Allow WooCommerce inventory stock to be reduced when adding items to cart', 'woocommerce-cart-stock-reducer' );
 
 		// Load the settings.
