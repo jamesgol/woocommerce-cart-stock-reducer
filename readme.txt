@@ -55,11 +55,11 @@ following pages:" at the page cache and database cache settings.
 == Changelog ==
 
 = 0.5 =
-Handle variable products
-Add cart expiration
+* Handle variable products
+* Add cart expiration
 
 = 0.1 =
-First initial release
+* First initial release
 
 == TODO ==
 
