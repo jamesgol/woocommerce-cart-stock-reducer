@@ -21,6 +21,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->expire_time         = $this->get_option( 'expire_time' );
 		$this->expire_custom_key   = $this->get_option( 'expire_custom_key' );
 
+		// Variables used for specific session
+		$this->item_expire_message    = null;
+
 		// Actions/Filters to setup WC_Integration elements
 		add_action( 'woocommerce_update_options_integration_' .  $this->id, array( $this, 'process_admin_options' ) );
 		// @todo Add admin interface validation/sanitation
@@ -33,8 +36,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		add_action( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
 
 		// Actions/Filters related to cart item expiration
+		add_action( 'woocommerce_add_to_cart', array( $this, 'add_to_cart' ), 10,6 );
 		add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 2 );
 		add_action( 'woocommerce_check_cart_items', array( $this, 'check_cart_items' ), 10 );
+		add_filter( 'wc_add_to_cart_message', array( $this, 'add_to_cart_message' ), 10, 2 );
 
 
 		// @todo Add function to call load_plugin_textdomain()
@@ -86,14 +91,25 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$cart = WC()->cart;
 		}
 		if ( 'yes' === $this->expire_items ) {
-			// @todo Make notice nicer.  Include product name (link?)
-			wc_add_notice( __( 'Item has expired and has been removed from your cart', 'woocommerce-cart-stock' ), 'error' );
+			$expired_cart_notice = apply_filters( 'wc_csr_expired_cart_notice', sprintf( __( "Sorry, '%s' was removed from your cart because you didn't checkout before the expiration time.", 'woocommerce-cart-stock-reducer' ), $cart->cart_contents[ $cart_id ][ 'data' ]->get_title() ), $cart_id, $cart );
+			wc_add_notice( $expired_cart_notice, 'error' );
 			unset( $cart->cart_contents[ $cart_id ] );
 		}
 
 	}
 
-	/**
+	public function add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
+		$cart = WC()->cart;
+		foreach ( $cart->cart_contents as $cart_id => $item ) {
+			if ( isset( $item[ 'csr_expire_time_text' ] )  ) {
+				// @todo This will show the wrong time for additional items added to cart.  Going to test out a countdown timer instead
+				$this->item_expire_message = apply_filters( 'wc_csr_expire_notice', sprintf( __( 'Please checkout within %s or this item will be removed from your cart.', 'woocommerce-cart-stock-reducer' ), $item[ 'csr_expire_time_text' ] ), $item[ 'csr_expire_time' ], $item[ 'csr_expire_time_text' ] );
+
+			}
+		}
+	}
+
+		/**
 	 * Called by 'woocommerce_add_cart_item' filter to add expiration time to cart items
 	 *
 	 * @param int $item Item ID
@@ -119,13 +135,20 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				}
 				if ( null !== $expire_time_text && 'never' !== $expire_time_text ) {
 					$item[ 'csr_expire_time' ] = strtotime( $expire_time_text );
-					// @todo Properly format notice and make more user friendly.  jquery countdown?
-					wc_add_notice( __( "Item will expire from cart in $expire_time_text!", 'woocommerce-cart-stock-reducer' ), 'notice' );
+					$item[ 'csr_expire_time_text' ] = $expire_time_text;
 				}
 			}
 
 		}
 		return $item;
+	}
+
+	function add_to_cart_message( $message, $product_id ) {
+		if ( null != $this->item_expire_message ) {
+			$message .= '  ' . $this->item_expire_message;
+		}
+
+		return $message;
 	}
 
 	/**

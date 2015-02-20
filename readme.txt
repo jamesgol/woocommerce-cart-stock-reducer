@@ -54,6 +54,10 @@ following pages:" at the page cache and database cache settings.
 
 == Changelog ==
 
+* Moved expire notice to 'wc_add_to_cart_message' filter so it get appended on the existing message
+* Added 'wc_csr_expire_notice' filter to allow changing of expiration notice displayed after adding item to cart
+* Added 'wc_csr_expired_cart_notice' filter to allow changing of notice displayed when item expires from cart
+
 = 0.5 =
 * Handle variable products
 * Add cart expiration
@@ -69,3 +73,4 @@ following pages:" at the page cache and database cache settings.
 * Look into adding ajax and mini-cart notices
 * Take some screenshots for wordpress.org
 * Add option of displaying when an item might be available in addition to the 'stock_pending' message
+* Add some kind of indicator to cart so you know what items will expire
