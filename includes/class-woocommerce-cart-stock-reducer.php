@@ -9,7 +9,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
 		$this->method_title       = __( 'Cart Stock Reducer', 'woocommerce-cart-stock-reducer' );
 		$this->method_description = __( 'Allow WooCommerce inventory stock to be reduced when adding items to cart', 'woocommerce-cart-stock-reducer' );
-
+		$this->plugins_url        = plugins_url( '/', dirname( __FILE__ ) );
 		// Load the settings.
 		$this->init_form_fields();
 		$this->init_settings();
@@ -22,7 +22,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->expire_custom_key   = $this->get_option( 'expire_custom_key' );
 
 		// Variables used for specific session
-		$this->item_expire_message    = null;
+		$this->item_expire_message = null;
+		$this->countdown_seconds   = null;
 
 		// Actions/Filters to setup WC_Integration elements
 		add_action( 'woocommerce_update_options_integration_' .  $this->id, array( $this, 'process_admin_options' ) );
@@ -41,7 +42,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		add_action( 'woocommerce_check_cart_items', array( $this, 'check_cart_items' ), 10 );
 		add_filter( 'wc_add_to_cart_message', array( $this, 'add_to_cart_message' ), 10, 2 );
 
-
+		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
 		// @todo Add function to call load_plugin_textdomain()
 
 	}
@@ -71,13 +73,28 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * Called by 'woocommerce_check_cart_items' action to expire items from cart
 	 */
 	public function check_cart_items( ) {
+		$expire_soonest = 0;
+		$item_expiring_soonest = null;
 		$cart = WC()->cart;
 		foreach ( $cart->cart_contents as $cart_id => $item ) {
-			if ( isset( $item[ 'csr_expire_time' ] ) && $this->is_expired( $item[ 'csr_expire_time' ] ) ) {
-				// Item has expired
-				$this->remove_expired_item( $cart_id, $cart );
+			if ( isset( $item[ 'csr_expire_time' ] ) ) {
+				if ( $this->is_expired( $item[ 'csr_expire_time' ] ) ) {
+					// Item has expired
+					$this->remove_expired_item( $cart_id, $cart );
+				} elseif ( 0 === $expire_soonest || $item[ 'csr_expire_time' ] < $expire_soonest ) {
+					// Keep track of the soonest expiration so we can notify
+					$expire_soonest = $item[ 'csr_expire_time' ];
+					$item_expiring_soonest = $cart_id;
+				}
 			}
 
+		}
+		if ( 0 !== $expire_soonest ) {
+			$item_expire_span = '<span id="wc-csr-countdown"></span>';
+			// @todo Adjust this text?  Once it is finalized switch to using _n() to pluralize item/items
+			$expiring_cart_notice = apply_filters( 'wc_csr_expiring_cart_notice', sprintf( __( "Please checkout within %s to guarantee your items don't expire.", 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $expire_soonest, $item_expiring_soonest );
+			wc_add_notice( $expiring_cart_notice, 'notice' );
+			$this->countdown( $expire_soonest );
 		}
 	}
 
@@ -101,15 +118,35 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
 		$cart = WC()->cart;
 		foreach ( $cart->cart_contents as $cart_id => $item ) {
-			if ( isset( $item[ 'csr_expire_time_text' ] )  ) {
-				// @todo This will show the wrong time for additional items added to cart.  Going to test out a countdown timer instead
-				$this->item_expire_message = apply_filters( 'wc_csr_expire_notice', sprintf( __( 'Please checkout within %s or this item will be removed from your cart.', 'woocommerce-cart-stock-reducer' ), $item[ 'csr_expire_time_text' ] ), $item[ 'csr_expire_time' ], $item[ 'csr_expire_time_text' ] );
-
+			if ( $cart_item_key === $cart_id && isset( $item[ 'csr_expire_time' ] )  ) {
+				$item_expire_span = '<span id="wc-csr-countdown"></span>';
+				$this->countdown( $item[ 'csr_expire_time' ] );
+				$this->item_expire_message = apply_filters( 'wc_csr_expire_notice', sprintf( __( 'Please checkout within %s or this item will be removed from your cart.', 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $item[ 'csr_expire_time' ], $item[ 'csr_expire_time_text' ] );
 			}
 		}
 	}
 
-		/**
+	protected function countdown( $time ) {
+		if ( isset( $time ) ) {
+			add_action( 'wp_footer', array( $this, 'countdown_footer' ), 25 );
+			wp_enqueue_script( 'wc-csr-jquery-countdown' );
+			$this->countdown_seconds = $time - time();
+		}
+
+	}
+
+	public function countdown_footer() {
+		if ( $this->countdown_seconds ) {
+			// Don't add any more javascript code here, if it needs added to move it to an external file
+			$code = '<script type="text/javascript">';
+			$code .= "jQuery('#wc-csr-countdown').countdown({until: '+" . $this->countdown_seconds . "', format: 'dhmS', layout: '{d<}{dn} {dl} {d>}{h<}{hn} {hl} {h>}{m<}{mn} {ml} {m>}{s<}{sn} {sl}{s>}'});";
+			$code .= '</script>';
+
+			echo $code;
+		}
+	}
+
+	/**
 	 * Called by 'woocommerce_add_cart_item' filter to add expiration time to cart items
 	 *
 	 * @param int $item Item ID
@@ -147,7 +184,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( null != $this->item_expire_message ) {
 			$message .= '  ' . $this->item_expire_message;
 		}
-
 		return $message;
 	}
 

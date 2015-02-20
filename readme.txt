@@ -54,6 +54,7 @@ following pages:" at the page cache and database cache settings.
 
 == Changelog ==
 
+* Added 'wc_csr_expiring_cart_notice' filter to allow changing of countdown text in cart
 * Moved expire notice to 'wc_add_to_cart_message' filter so it get appended on the existing message
 * Added 'wc_csr_expire_notice' filter to allow changing of expiration notice displayed after adding item to cart
 * Added 'wc_csr_expired_cart_notice' filter to allow changing of notice displayed when item expires from cart
