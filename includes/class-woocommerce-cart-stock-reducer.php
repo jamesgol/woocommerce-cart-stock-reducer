@@ -93,7 +93,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			}
 
 		}
-		if ( 'always' === $this->expire_countdown && 0 !== $expire_soonest ) {
+		if ( 'always' === $this->expire_countdown && 0 !== $expire_soonest && ! is_ajax() ) {
 			$item_expire_span = '<span id="wc-csr-countdown"></span>';
 			// @todo Adjust this text?  Once it is finalized switch to using _n() to pluralize item/items
 			$expiring_cart_notice = apply_filters( 'wc_csr_expiring_cart_notice', sprintf( __( "Please checkout within %s to guarantee your items don't expire.", 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $expire_soonest, $item_expiring_soonest );
