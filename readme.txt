@@ -35,6 +35,7 @@ Please submit bug reports, feature requests, and pull requests via the [GitHub r
 
 == Installation ==
 
+1. Download plugin from [GitHub](https://github.com/jamesgol/woocommerce-cart-stock-reducer) or the [wordpress.org repository](https://wordpress.org/plugins/woocommerce-cart-stock-reducer/)
 1. Upload plugin and activate through the 'Plugins' menu in WordPress
 1. Configure plugin specific settings under the WooCommerce->Settings->Integration admin page
 
