@@ -54,6 +54,8 @@ following pages:" at the page cache and database cache settings.
 
 == Changelog ==
 
+* Allow countdown timer to be configured when it is shown (Always, Never, Only When Items are added)
+* Allow cart expiration to happen without managing being enabled
 * Added 'wc_csr_expiring_cart_notice' filter to allow changing of countdown text in cart
 * Moved expire notice to 'wc_add_to_cart_message' filter so it get appended on the existing message
 * Added 'wc_csr_expire_notice' filter to allow changing of expiration notice displayed after adding item to cart
