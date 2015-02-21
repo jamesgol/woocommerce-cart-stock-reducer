@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: woocommerce
 Requires at least: 4.0
 Tested up to: 4.1.1
-Stable tag: 0.5
+Stable tag: 0.75
 WC requires at least: 2.2
 WC tested up to: 2.3.4
 License: GPLv2 or later
@@ -66,9 +66,10 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
-
+= 0.75 =
 * Allow countdown timer to be configured when it is shown (Always, Never, Only When Items are added)
 * Allow cart expiration to happen without managing being enabled
+* Add countdown timer instead of just displaying static string
 * Added 'wc_csr_expiring_cart_notice' filter to allow changing of countdown text in cart
 * Moved expire notice to 'wc_add_to_cart_message' filter so it get appended on the existing message
 * Added 'wc_csr_expire_notice' filter to allow changing of expiration notice displayed after adding item to cart
