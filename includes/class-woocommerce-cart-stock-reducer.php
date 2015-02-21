@@ -15,6 +15,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->init_settings();
 
 		// Define user set variables.
+		$this->cart_stock_reducer  = $this->get_option( 'cart_stock_reducer' );
 		$this->min_no_check        = $this->get_option( 'min_no_check' );
 		$this->stock_pending       = $this->get_option( 'stock_pending' );
 		$this->expire_items        = $this->get_option( 'expire_items' );
@@ -30,11 +31,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		// @todo Add admin interface validation/sanitation
 
 		// Filters related to stock quantity
-		add_filter( 'woocommerce_get_availability', array( $this, 'get_avail' ), 10, 2 );
-		add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
-		add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
-		add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
-		add_action( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
+		if ( 'yes' === $this->cart_stock_reducer ) {
+			add_filter( 'woocommerce_get_availability', array( $this, 'get_avail' ), 10, 2 );
+			add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
+			add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
+			add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
+			add_action( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
+		}
 
 		// Actions/Filters related to cart item expiration
 		add_action( 'woocommerce_add_to_cart', array( $this, 'add_to_cart' ), 10,6 );
@@ -157,7 +160,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function add_cart_item( $item, $key ) {
 		if ( isset( $item[ 'data' ] ) ) {
 			$product = $item[ 'data' ];
-			if ( $product->managing_stock() && 'yes' === $this->expire_items ) {
+			if ( 'yes' === $this->expire_items ) {
 				$expire_time_text = null;
 				if ( ! empty( $this->expire_time ) ) {
 					// Check global expiration time
@@ -426,6 +429,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function init_form_fields() {
 		$this->form_fields = array(
+			'cart_stock_reducer' => array(
+				'title'             => __( 'Cart Stock Reducer', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'checkbox',
+				'label'             => __( 'Enable Cart Stock Reducer', 'woocommerce-cart-stock-reducer' ),
+				'default'           => 'yes',
+				'description'       => __( 'If checked, stock quantity will be reduced when items are added to cart.', 'woocommerce-cart-stock-reducer' ),
+			),
 			'min_no_check' => array(
 				'title'             => __( 'Minimum Stock to Skip Check', 'woocommerce-cart-stock-reducer' ),
 				'type'              => 'decimal',
