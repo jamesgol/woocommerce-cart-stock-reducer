@@ -440,7 +440,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				'description'       => __( 'If checked, stock quantity will be reduced when items are added to cart.', 'woocommerce-cart-stock-reducer' ),
 			),
 			'min_no_check' => array(
-				'title'             => __( 'Minimum Stock to Skip Check', 'woocommerce-cart-stock-reducer' ),
+				'title'             => __( 'Minimum Stock to Skip Check (Advanced Option)', 'woocommerce-cart-stock-reducer' ),
 				'type'              => 'decimal',
 				'description'       => __( 'Enter the minimum quantity of stock to have in order to skip checking carts.  This should be higher than the amount you expect could sell before the carts expire.', 'woocommerce-cart-stock-reducer' ),
 				'desc_tip'          => true,
@@ -451,14 +451,22 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				'type'              => 'text',
 				'description'       => __( 'Enter alternate text to be displayed when there are items in stock but held in an existing cart.', 'woocommerce-cart-stock-reducer' ),
 				'desc_tip'          => true,
-				'default'           => "Sorry, but there's a pending order for this item. It's not available for purchase."
+				'default'           => __( "This item is not available at this time due to pending orders.", 'woocommerce-cart-stock-reducer' ),
 			),
 			'expire_items' => array(
 				'title'             => __( 'Expire Items', 'woocommerce-cart-stock-reducer' ),
 				'type'              => 'checkbox',
 				'label'             => __( 'Enable Item Expiration', 'woocommerce-cart-stock-reducer' ),
 				'default'           => 'no',
-				'description'       => __( 'If checked, items that stock is managed for will expire from carts', 'woocommerce-cart-stock-reducer' ),
+				'description'       => __( "If checked, items that stock is managed for will expire from carts.  You MUST set an 'Expire Time' below if you use this option", 'woocommerce-cart-stock-reducer' ),
+			),
+			'expire_time' => array(
+				'title'             => __( 'Expire Time', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'text',
+				'description'       => __( 'How long before item expires from cart', 'woocommerce-cart-stock-reducer' ),
+				'desc_tip'          => true,
+				'placeholder'       => 'Examples: 10 minutes, 1 hour, 6 hours, 1 day',
+				'default'           => ''
 			),
 			'expire_countdown' => array(
 				'title'             => __( 'Expire Countdown', 'woocommerce-cart-stock-reducer' ),
@@ -469,14 +477,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 											  'addonly' => __( 'Only when items are added', 'woocommerce-cart-stock-reducer' ),
 											  'never' => __( 'Never', 'woocommerce-cart-stock-reducer' ) ),
 				'description'       => __( 'When to display a countdown to expiration', 'woocommerce-cart-stock-reducer' ),
-			),
-			'expire_time' => array(
-				'title'             => __( 'Expire Time', 'woocommerce-cart-stock-reducer' ),
-				'type'              => 'text',
-				'description'       => __( 'How long before item expires from cart', 'woocommerce-cart-stock-reducer' ),
-				'desc_tip'          => true,
-				'placeholder'       => 'Examples: 10 minutes, 1 hour, 1 day, 1 week ',
-				'default'           => ''
 			),
 			'expire_custom_key' => array(
 				'title'             => __( 'Expire Custom Key', 'woocommerce-cart-stock-reducer' ),
