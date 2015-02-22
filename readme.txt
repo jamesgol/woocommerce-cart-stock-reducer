@@ -53,11 +53,11 @@ They will receive a "Quantity requested not available" message and their origina
 
 = What setting should I use for 'Minimum Stock to Skip Check'? =
 
-This is an advanced option and should only be used on high volume sites with predictable orders.
-The setting to use depends on your stock quantites and how much you expect to sell.  If you have a stock of 100 and
-only expect to sell 10 per hour you could set this to 25 and set the expiration to one hour and you should be safe.
-Always err on the side of caution, you don't want to run out of stock when someone believes they will get an item.
-If in doubt, don't use this option.
+You can set this by using the 'wc_csr_min_no_check' filter.  This is an advanced option and should only be used on high
+volume sites with predictable orders.  The setting to use depends on your stock quantites and how much you expect to
+sell.  If you have a stock of 100 and only expect to sell 10 per hour you could set this to 25 and set the expiration
+to one hour and you should be safe. Always err on the side of caution, you don't want to run out of stock when someone
+believes they will get an item.  If in doubt, don't use this option.
 
 = What adjustments need to be made to caching? =
 
