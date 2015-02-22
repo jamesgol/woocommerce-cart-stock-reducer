@@ -16,7 +16,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		// Define user set variables.
 		$this->cart_stock_reducer  = $this->get_option( 'cart_stock_reducer' );
-		$this->min_no_check        = $this->get_option( 'min_no_check' );
 		$this->stock_pending       = $this->get_option( 'stock_pending' );
 		$this->expire_items        = $this->get_option( 'expire_items' );
 		$this->expire_countdown    = $this->get_option( 'expire_countdown' );
@@ -349,7 +348,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				$product_field = 'product_id';
 			}
 
-			if ( ! empty( $this->min_no_check  ) && $this->min_no_check < (int) $stock ) {
+			// The minimum quantity of stock to have in order to skip checking carts.  This should be higher than the amount you expect could sell before the carts expire.
+			// Originally was a configuration variable, but this is such an advanced option I thought it would be better as a filter.
+			// Plus you can use some math to make this decision
+			$min_no_check = apply_filters( 'wc_csr_min_no_check', false, $id, $stock );
+			if ( false != $min_no_check && min_no_check < (int) $stock ) {
 				// Don't bother searching through all the carts if there is more than 'min_no_check' quantity
 				return $stock;
 			}
@@ -466,13 +469,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				'label'             => __( 'Enable Cart Stock Reducer', 'woocommerce-cart-stock-reducer' ),
 				'default'           => 'yes',
 				'description'       => __( 'If checked, stock quantity will be reduced when items are added to cart.', 'woocommerce-cart-stock-reducer' ),
-			),
-			'min_no_check' => array(
-				'title'             => __( 'Minimum Stock to Skip Check (Advanced Option)', 'woocommerce-cart-stock-reducer' ),
-				'type'              => 'decimal',
-				'description'       => __( 'Enter the minimum quantity of stock to have in order to skip checking carts.  This should be higher than the amount you expect could sell before the carts expire.', 'woocommerce-cart-stock-reducer' ),
-				'desc_tip'          => true,
-				'default'           => ''
 			),
 			'stock_pending' => array(
 				'title'             => __( 'Pending Order Text', 'woocommerce-cart-stock-reducer' ),

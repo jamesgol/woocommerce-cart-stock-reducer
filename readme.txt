@@ -67,6 +67,9 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
+= Dev =
+* Move 'Minimum Stock to Skip Check' from config to a filter 'wc_csr_min_no_check'
+
 = 0.75 =
 * Allow countdown timer to be configured when it is shown (Always, Never, Only When Items are added)
 * Allow cart expiration to happen without managing being enabled
