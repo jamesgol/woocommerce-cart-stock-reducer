@@ -430,6 +430,34 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return $expired;
 	}
 
+	public function validate_expire_time_field( $key ) {
+		$expire_time = sanitize_text_field( $_POST[ $this->plugin_id . $this->id . '_' . $key ] );
+
+		$time = strtotime( $expire_time );
+		if ( ! $time ) {
+			$this->errors[] = sprintf( __( 'Invalid Expire Time: %s', 'woocommerce-cart-stock-reducer' ), $expire_time );
+		} elseif ( $time < time() ) {
+			$this->errors[] = sprintf( __( 'Cannot set Expire Time that would be in the past: %s', 'woocommerce-cart-stock-reducer' ), $expire_time );
+		}
+		return $expire_time;
+	}
+
+	/**
+	 * Display errors by overriding the display_errors() method
+	 * @see display_errors()
+	 */
+	public function display_errors( ) {
+
+		// loop through each error and display it
+		foreach ( $this->errors as $key => $value ) {
+			?>
+			<div class="error">
+				<p><?php echo $value ?></p>
+			</div>
+		<?php
+		}
+	}
+
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'cart_stock_reducer' => array(
