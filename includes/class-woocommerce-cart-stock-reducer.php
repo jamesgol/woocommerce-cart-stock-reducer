@@ -20,7 +20,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->expire_items        = $this->get_option( 'expire_items' );
 		$this->expire_countdown    = $this->get_option( 'expire_countdown' );
 		$this->expire_time         = $this->get_option( 'expire_time' );
-		$this->expire_custom_key   = $this->get_option( 'expire_custom_key' );
 
 		// Variables used for specific session
 		$this->item_expire_message = null;
@@ -168,9 +167,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 					// Check global expiration time
 					$expire_time_text = $this->expire_time;
 				}
-				if ( ! empty( $this->expire_custom_key ) ) {
+				$expire_custom_key = apply_filters( 'wc_csr_expire_custom_key', 'csr_expire_time', $item, $key );
+				if ( ! empty( $expire_custom_key ) ) {
 					// Check item specific expiration
-					$item_expire_time = get_post_meta( $item[ 'product_id' ], $this->expire_custom_key, true );
+					$item_expire_time = get_post_meta( $item[ 'product_id' ], $expire_custom_key, true );
 					if ( ! empty( $item_expire_time ) ) {
 						$expire_time_text = $item_expire_time;
 					}
@@ -502,15 +502,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 											  'never' => __( 'Never', 'woocommerce-cart-stock-reducer' ) ),
 				'description'       => __( 'When to display a countdown to expiration', 'woocommerce-cart-stock-reducer' ),
 			),
-			'expire_custom_key' => array(
-				'title'             => __( 'Expire Custom Key', 'woocommerce-cart-stock-reducer' ),
-				'type'              => 'text',
-				'description'       => __( 'Enter "Custom Field" name that can be referenced on a specific item to set expiration time.', 'woocommerce-cart-stock-reducer' ),
-				'desc_tip'          => true,
-				'default'           => 'csr_expire_time'
-			),
-
-
 		);
 	}
 

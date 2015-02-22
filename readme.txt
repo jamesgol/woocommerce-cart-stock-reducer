@@ -68,6 +68,7 @@ following pages:" at the page cache and database cache settings.
 
 == Changelog ==
 = Dev =
+* Move 'Expire Custom Key' from config to filter 'wc_csr_expire_custom_key'
 * Move 'Minimum Stock to Skip Check' from config to a filter 'wc_csr_min_no_check'
 
 = 0.75 =
