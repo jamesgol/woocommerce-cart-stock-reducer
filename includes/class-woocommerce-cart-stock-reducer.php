@@ -117,6 +117,16 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	}
 
+	/**
+	 * Called from the 'woocommerce_add_to_cart' action, to add a message/countdown to the page
+	 *
+	 * @param $cart_item_key
+	 * @param $product_id
+	 * @param $quantity
+	 * @param $variation_id
+	 * @param $variation
+	 * @param $cart_item_data
+	 */
 	public function add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
 		if ( in_array( $this->expire_countdown, array( 'always', 'addonly') ) ) {
 			$cart = WC()->cart;
@@ -130,6 +140,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 	}
 
+	/**
+	 * Include a countdown timer
+	 *
+	 * @param int $time Time the countdown expires.  Seconds since the epoch
+	 */
 	protected function countdown( $time ) {
 		if ( isset( $time ) ) {
 			add_action( 'wp_footer', array( $this, 'countdown_footer' ), 25 );
@@ -139,6 +154,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	}
 
+	/**
+	 * Called from the 'wp_footer' action when we want to add a footer
+	 */
 	public function countdown_footer() {
 		if ( $this->countdown_seconds ) {
 			// Don't add any more javascript code here, if it needs added to move it to an external file
@@ -185,6 +203,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return $item;
 	}
 
+	/**
+	 * Called by the 'wc_add_to_cart_message' filter to append an internal message
+	 * @param string $message
+	 * @param int $product_id
+	 *
+	 * @return string
+	 */
 	function add_to_cart_message( $message, $product_id ) {
 		if ( null != $this->item_expire_message ) {
 			$message .= '  ' . $this->item_expire_message;
@@ -433,6 +458,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return $expired;
 	}
 
+
+	/**
+	 * Validate and sanitize the 'expire_time_field'
+	 *
+	 * @param string $key Field name to validate
+	 *
+	 * @return string
+	 */
 	public function validate_expire_time_field( $key ) {
 		$expire_time = sanitize_text_field( $_POST[ $this->plugin_id . $this->id . '_' . $key ] );
 

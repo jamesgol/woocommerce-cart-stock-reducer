@@ -91,9 +91,12 @@ following pages:" at the page cache and database cache settings.
 
 * Make expiration strings nicer
 * Test with backordered products
-* Setup sanitizer for admin fields
 * Look into adding ajax and mini-cart notices
 * Take some screenshots for wordpress.org
 * Add option of displaying when an item might be available in addition to the 'stock_pending' message
 * Add some kind of indicator to cart so you know what items will expire
 * Add "Pending orders include X items added to your cart" to 'stock_pending' message
+
+== Thanks ==
+
+* Bob DeYoung of [BlueLotusWorks](https://github.com/bluelotusworks) for testing, feedback, and support
