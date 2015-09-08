@@ -36,6 +36,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
 			add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
 			add_action( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
+			add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
 		}
 
 		// Actions/Filters related to cart item expiration
@@ -136,6 +137,35 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 					$this->countdown( $item[ 'csr_expire_time' ] );
 					$this->item_expire_message = apply_filters( 'wc_csr_expire_notice', sprintf( __( 'Please checkout within %s or this item will be removed from your cart.', 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $item[ 'csr_expire_time' ], $item[ 'csr_expire_time_text' ] );
 				}
+			}
+		}
+	}
+
+	/**
+	 * Called by 'wc_csr_adjust_cart_expiration' action to adjust the expiration times of the cart
+	 *
+	 * @param string $time Time string to reset item(s) to.  Default: Initial value per item
+	 * @param string $cart_item_key Specific item to adjust expiration time on, Default: All items
+	 */
+	public function adjust_cart_expiration( $time = null, $cart_item_key = null ) {
+		if ( $cart = WC()->cart ) {
+			// Did we modify the cart
+			$updated = false;
+
+			foreach ($cart->cart_contents as $cart_id => $item) {
+				if (isset($item['csr_expire_time'])) {
+					if (isset($cart_item_key) && $cart_item_key !== $cart_id) {
+						continue;
+					}
+					if ( empty( $time ) ) {
+						$time = $item['csr_expire_time_text'];
+					}
+					$cart->cart_contents[$cart_id]['csr_expire_time'] = strtotime($time);
+					$updated = true;
+				}
+			}
+			if (true === $updated) {
+				WC()->session->set('cart', $cart->cart_contents);
 			}
 		}
 	}
