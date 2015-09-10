@@ -423,7 +423,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			// Originally was a configuration variable, but this is such an advanced option I thought it would be better as a filter.
 			// Plus you can use some math to make this decision
 			$min_no_check = apply_filters( 'wc_csr_min_no_check', false, $id, $stock );
-			if ( false != $min_no_check && min_no_check < (int) $stock ) {
+			if ( false != $min_no_check && $min_no_check < (int) $stock ) {
 				// Don't bother searching through all the carts if there is more than 'min_no_check' quantity
 				return $stock;
 			}
