@@ -5,6 +5,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class WC_Cart_Stock_Reducer extends WC_Integration {
 
+	private $pseudo_stock = array();
+
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
 		$this->method_title       = __( 'Cart Stock Reducer', 'woocommerce-cart-stock-reducer' );
@@ -68,7 +70,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return array
 	 */
 	public function quantity_input_args( $args, $product ) {
-		$args[ 'max_value' ] = $this->get_stock_available( $product->id, $product->variation_id, $product, true );
+		if ( 'quantity' === $args[ 'input_name' ] ) {
+			$ignore = false;
+		} else {
+			// Ignore users quantity when looking at pages like the shopping cart
+			$ignore = true;
+		}
+		$args[ 'max_value' ] = $this->get_stock_available( $product->id, $product->variation_id, $product, $ignore );
 
 		return $args;
 	}
@@ -396,7 +404,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( null === $product ) {
 			$product = wc_get_product( $id );
 		}
-		$stock = $product->get_total_stock();
+		if ( isset( $this->pseudo_stock[ $id ] ) ) {
+			$stock = $this->pseudo_stock[ $id ];
+		} else {
+			$stock = $product->get_total_stock();
+			// Cache our retrieved stock value or else we will decrement the "fake" stock count every time this is called
+			$this->pseudo_stock[ $id ] = $stock;
+		}
+
 		if ( false !== $id ) {
 			if ( $id === $variation_id ) {
 				$product_field = 'variation_id';

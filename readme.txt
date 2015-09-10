@@ -68,6 +68,7 @@ following pages:" at the page cache and database cache settings.
 
 == Changelog ==
 = Dev =
+* Cache stock value so we don't continually decrement the value every time we check it
 * Add call to action 'wc_csr_before_remove_expired_item' to remove_expired_item function
 * Add 'wc_csr_adjust_cart_expirtation' action to adjust existing items expire time
 * Move 'Expire Custom Key' from config to filter 'wc_csr_expire_custom_key'
