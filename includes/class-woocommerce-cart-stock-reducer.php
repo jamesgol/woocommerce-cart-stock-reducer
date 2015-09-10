@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	private $pseudo_stock = array();
+	private $expiration_time_cache = array();
 
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
@@ -476,6 +477,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 							//$key !== $ignore &&
 							// Ignore doesn't work as I thought
 							$quantity += $row[ 'quantity' ];
+						}
+						if ( isset( $row[ 'csr_expire_time' ] ) ) {
+							if ( ! isset( $this->expiration_time_cache[ $item ] ) || $row[ 'csr_expire_time' ] < $this->expiration_time_cache[ $item ] ) {
+								// Cache the earliest time an item is expiring
+								$this->expiration_time_cache[ $item ] = $row[ 'csr_expire_time' ];
+							}
 						}
 					}
 				}
