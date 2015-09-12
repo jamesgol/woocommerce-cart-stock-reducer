@@ -87,19 +87,20 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function check_cart_items( ) {
 		$expire_soonest = 0;
 		$item_expiring_soonest = null;
-		$cart = WC()->cart;
-		foreach ( $cart->cart_contents as $cart_id => $item ) {
-			if ( isset( $item[ 'csr_expire_time' ] ) ) {
-				if ( $this->is_expired( $item[ 'csr_expire_time' ] ) ) {
-					// Item has expired
-					$this->remove_expired_item( $cart_id, $cart );
-				} elseif ( 0 === $expire_soonest || $item[ 'csr_expire_time' ] < $expire_soonest ) {
-					// Keep track of the soonest expiration so we can notify
-					$expire_soonest = $item[ 'csr_expire_time' ];
-					$item_expiring_soonest = $cart_id;
+		if ( WC()->cart && sizeof( WC()->cart->get_cart() ) > 0 ) {
+			$cart = WC()->cart;
+			foreach ( $cart->cart_contents as $cart_id => $item ) {
+				if ( isset( $item[ 'csr_expire_time' ] ) ) {
+					if ( $this->is_expired( $item[ 'csr_expire_time' ] ) ) {
+						// Item has expired
+						$this->remove_expired_item( $cart_id, $cart );
+					} elseif ( 0 === $expire_soonest || $item[ 'csr_expire_time' ] < $expire_soonest ) {
+						// Keep track of the soonest expiration so we can notify
+						$expire_soonest = $item[ 'csr_expire_time' ];
+						$item_expiring_soonest = $cart_id;
+					}
 				}
 			}
-
 		}
 		if ( 'always' === $this->expire_countdown && 0 !== $expire_soonest && ! is_ajax() ) {
 			$item_expire_span = '<span id="wc-csr-countdown"></span>';
