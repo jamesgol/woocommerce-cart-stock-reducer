@@ -51,8 +51,25 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
 		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
 		// @todo Add function to call load_plugin_textdomain()
+		
+		// Direct link to our settings page
+		add_filter( 'plugin_action_links', array( $this, 'action_links' ), 10, 2 );
 
 	}
+	 /**
+	  * Generate a direct link to settings page within WooCommerce
+	  *
+	  */
+	public function action_links( $links, $file ) {
+		if ( 'woocommerce-cart-stock-reducer/woocommerce-cart-stock-reducer.php' == $file ) {
+			$settings_link = '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=integration' ) . '">' . __( 'Settings' ) . '</a>';
+			// make the 'Settings' link appear first
+			array_unshift( $links, $settings_link );
+		}
+		return $links;
+	}
+	
+	
 
 	/**
 	 * Called from hook 'woocommerce_add_to_cart_redirect', odd choice but it gets called after a succesful save of an item
