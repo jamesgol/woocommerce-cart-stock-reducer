@@ -8,6 +8,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	private $pseudo_stock = array();
 	private $expiration_time_cache = array();
 
+	// Variables used for specific session
+	private $item_expire_message = null;
+	private $countdown_seconds   = array();
+
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
 		$this->method_title       = __( 'Cart Stock Reducer', 'woocommerce-cart-stock-reducer' );
@@ -20,13 +24,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		// Define user set variables.
 		$this->cart_stock_reducer  = $this->get_option( 'cart_stock_reducer' );
 		$this->stock_pending       = $this->get_option( 'stock_pending' );
+		$this->stock_pending_expire_time = $this->get_option( 'stock_pending_expire_time' );
+		$this->stock_pending_include_cart_items = $this->get_option( 'stock_pending_include_cart_items' );
 		$this->expire_items        = $this->get_option( 'expire_items' );
 		$this->expire_countdown    = $this->get_option( 'expire_countdown' );
 		$this->expire_time         = $this->get_option( 'expire_time' );
 
-		// Variables used for specific session
-		$this->item_expire_message = null;
-		$this->countdown_seconds   = null;
 
 		// Actions/Filters to setup WC_Integration elements
 		add_action( 'woocommerce_update_options_integration_' .  $this->id, array( $this, 'process_admin_options' ) );
@@ -38,6 +41,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
 			add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
 			add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
+			add_filter( 'wc_csr_stock_pending_text', array( $this, 'replace_stock_pending_text' ), 10, 3 );
 			add_action( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
 			add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
 		}
@@ -202,11 +206,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 *
 	 * @param int $time Time the countdown expires.  Seconds since the epoch
 	 */
-	protected function countdown( $time ) {
+	protected function countdown( $time, $class = 'wc-csr-countdown' ) {
 		if ( isset( $time ) ) {
-			add_action( 'wp_footer', array( $this, 'countdown_footer' ), 25 );
-			wp_enqueue_script( 'wc-csr-jquery-countdown' );
-			$this->countdown_seconds = $time - time();
+			if ( empty( $this->countdown_seconds ) ) {
+				// Only run this once per execution, in case we need to add more later
+				add_action('wp_footer', array($this, 'countdown_footer'), 25);
+				wp_enqueue_script('wc-csr-jquery-countdown');
+			}
+			$this->countdown_seconds[ $class ] = $time - time();
 		}
 
 	}
@@ -215,10 +222,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * Called from the 'wp_footer' action when we want to add a footer
 	 */
 	public function countdown_footer() {
-		if ( $this->countdown_seconds ) {
+		if ( !empty( $this->countdown_seconds ) ) {
 			// Don't add any more javascript code here, if it needs added to move it to an external file
 			$code = '<script type="text/javascript">';
-			$code .= "jQuery('#wc-csr-countdown').countdown({until: '+" . $this->countdown_seconds . "', format: 'dhmS', layout: '{d<}{dn} {dl} {d>}{h<}{hn} {hl} {h>}{m<}{mn} {ml} {m>}{s<}{sn} {sl}{s>}'});";
+			foreach ( $this->countdown_seconds as $class => $time ) {
+				$code .= "jQuery('#" . $class . "').countdown({until: '+" . $time . "', format: 'dhmS', layout: '{d<}{dn} {dl} {d>}{h<}{hn} {hl} {h>}{m<}{mn} {ml} {m>}{s<}{sn} {sl}{s>}'});";
+			}
 			$code .= '</script>';
 
 			echo $code;
@@ -387,7 +396,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			} else {
 				if ( ! empty( $this->stock_pending ) ) {
 					// Override text via configurable option
-					$info[ 'availability' ] = $this->stock_pending;
+					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_pending_text', $this->stock_pending, $info, $product );
 					$info[ 'class' ]        = 'out-of-stock';
 				} elseif ( $product->backorders_allowed() && $product->backorders_require_notification() ) {
 					$info[ 'availability' ] = __( 'Available on backorder', 'woocommerce' );
@@ -403,6 +412,46 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 
 		return $info;
+	}
+
+	public function replace_stock_pending_text( $pending_text, $info = null, $product = null ) {
+
+		if ( null != $product && $item = $this->item_managing_stock( $product->id, $product->variation_id ) ) {
+			if ( !empty( $this->stock_pending_include_cart_items ) && $this->items_in_cart( $item ) ) {
+				// Only append text if enabled and there are items actually in this users cart
+				$pending_include_cart_items = str_ireplace( '%CSR_NUM_ITEMS%', $this->items_in_cart( $item ), $this->stock_pending_include_cart_items );
+				$pending_text .= ' ' . $pending_include_cart_items;
+			}
+
+			if ( !empty( $this->stock_pending_expire_time ) && $this->expiration_time_cache( $item ) ) {
+				// Only append text if enabled and there are items that will expire
+				$pending_expire_text = str_ireplace( '%CSR_EXPIRE_TIME%', human_time_diff( time(), $this->expiration_time_cache( $item ) ), $this->stock_pending_expire_time );
+				// Was really hoping to use the jquery countdown here but the default WooCommerce templates
+				// call esc_html so I can't easily include a class here :(
+				$pending_text .= ' ' . $pending_expire_text;
+			}
+		}
+
+		return $pending_text;
+	}
+
+	private function expiration_time_cache( $item_id ) {
+		if ( isset( $this->expiration_time_cache[ $item_id ] ) ) {
+			return $this->expiration_time_cache[ $item_id ];
+		}
+		return false;
+	}
+
+	private function items_in_cart( $item_id ) {
+		$count = 0;
+		if ( $cart = WC()->cart ) {
+			foreach ($cart->cart_contents as $cart_id => $item) {
+				if ( $item_id === $item[ 'product_id' ] || $item_id === $item[ 'variation_id' ] ) {
+					$count += $item[ 'quantity' ];
+				}
+			}
+		}
+		return $count;
 	}
 
 	/**
@@ -479,7 +528,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$results = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE option_name LIKE '_wc_session_%' AND option_value LIKE '%\"{$field}\";i:{$item};%'", OBJECT );
 		if ( $results ) {
 			foreach ( $results as $result ) {
-				if ( true === $ignore && $result->option_name === '_wc_session_' . WC()->session->get_customer_id() ) {
+				if ( $result->option_name === '_wc_session_' . WC()->session->get_customer_id() ) {
+					$row_in_own_cart = true;
+				} else {
+					$row_in_own_cart = false;
+				}
+				if ( true === $ignore && true === $row_in_own_cart ) {
 					continue;
 				}
 				$session = unserialize( $result->option_value );
@@ -491,11 +545,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 							continue;
 						}
 						if ( $item === $row[ $field ] ) {
-							//$key !== $ignore &&
-							// Ignore doesn't work as I thought
 							$quantity += $row[ 'quantity' ];
 						}
-						if ( isset( $row[ 'csr_expire_time' ] ) ) {
+						if ( isset( $row[ 'csr_expire_time' ] ) && false === $row_in_own_cart ) {
+							// Don't track expiration time of items in the users own cart
 							if ( ! isset( $this->expiration_time_cache[ $item ] ) || $row[ 'csr_expire_time' ] < $this->expiration_time_cache[ $item ] ) {
 								// Cache the earliest time an item is expiring
 								$this->expiration_time_cache[ $item ] = $row[ 'csr_expire_time' ];
@@ -579,6 +632,20 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				'description'       => __( 'Enter alternate text to be displayed when there are items in stock but held in an existing cart.', 'woocommerce-cart-stock-reducer' ),
 				'desc_tip'          => true,
 				'default'           => __( "This item is not available at this time due to pending orders.", 'woocommerce-cart-stock-reducer' ),
+			),
+			'stock_pending_expire_time' => array(
+				'title'             => __( 'Append Expiration Time to Pending Order Text', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'text',
+				'description'       => __( 'Enter text to be appended when there are items in stock but held in an existing cart. %CSR_EXPIRE_TIME% will be replaced with a countdown to when items might be available.', 'woocommerce-cart-stock-reducer' ),
+				'desc_tip'          => false,
+				'default'           => __( 'Check back in %CSR_EXPIRE_TIME% to see if items become available.', 'woocommerce-cart-stock-reducer' ),
+			),
+			'stock_pending_include_cart_items' => array(
+				'title'             => __( 'Append Included Items to Pending Order Text', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'text',
+				'description'       => __( 'Enter text to be appended when the there are pending items in the users cart. %CSR_NUM_ITEMS% will be replaced with the number of items in cart.', 'woocommerce-cart-stock-reducer' ),
+				'desc_tip'          => false,
+				'default'           => __( 'Pending orders include %CSR_NUM_ITEMS% items already added to your cart.', 'woocommerce-cart-stock-reducer' ),
 			),
 			'expire_items' => array(
 				'title'             => __( 'Expire Items', 'woocommerce-cart-stock-reducer' ),

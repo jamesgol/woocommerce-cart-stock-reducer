@@ -68,6 +68,9 @@ following pages:" at the page cache and database cache settings.
 
 == Changelog ==
 = Dev =
+* Add 2 new options to append strings to the pending order text.
+* Add 'wc_csr_stock_pending_text' filter (used internally) to replace pending order text
+* Add a link from the plugins page to settings (Thanks Gabriel Reguly!)
 * Cache stock value so we don't continually decrement the value every time we check it
 * Add call to action 'wc_csr_before_remove_expired_item' to remove_expired_item function
 * Add 'wc_csr_adjust_cart_expiration' action to adjust existing items expire time
@@ -96,9 +99,7 @@ following pages:" at the page cache and database cache settings.
 * Test with backordered products
 * Look into adding ajax and mini-cart notices
 * Take some screenshots for wordpress.org
-* Add option of displaying when an item might be available in addition to the 'stock_pending' message
 * Add some kind of indicator to cart so you know what items will expire
-* Add "Pending orders include X items added to your cart" to 'stock_pending' message
 
 == Thanks ==
 
