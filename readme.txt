@@ -100,6 +100,7 @@ following pages:" at the page cache and database cache settings.
 * Look into adding ajax and mini-cart notices
 * Take some screenshots for wordpress.org
 * Add some kind of indicator to cart so you know what items will expire
+* Add option to refresh page (or do something) when items have expired from cart
 
 == Thanks ==
 
