@@ -3,14 +3,14 @@
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY  
 **Tags:** woocommerce  
 **Requires at least:** 4.0  
-**Tested up to:** 4.1.1  
-**Stable tag:** 0.75  
+**Tested up to:** 4.3.1  
+**Stable tag:** 1.0  
 **WC requires at least:** 2.2  
-**WC tested up to:** 2.3.4  
+**WC tested up to:** 2.4.7  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
-Allow WooCommerce inventory stock to be reduced when adding items to cart
+Allow WooCommerce inventory stock to be reduced when adding items to cart and/or expire items from the cart
 
 ## Description ##
 
@@ -35,6 +35,7 @@ Please submit bug reports, feature requests, and pull requests via the [GitHub r
 
 ## Installation ##
 
+1. Download plugin from [GitHub](https://github.com/jamesgol/woocommerce-cart-stock-reducer) or the [wordpress.org repository](https://wordpress.org/plugins/woocommerce-cart-stock-reducer/)
 1. Upload plugin and activate through the 'Plugins' menu in WordPress
 1. Configure plugin specific settings under the WooCommerce->Settings->Integration admin page
 
@@ -52,11 +53,11 @@ They will receive a "Quantity requested not available" message and their origina
 
 ### What setting should I use for 'Minimum Stock to Skip Check'? ###
 
-This is an advanced option and should only be used on high volume sites with predictable orders.
-The setting to use depends on your stock quantites and how much you expect to sell.  If you have a stock of 100 and
-only expect to sell 10 per hour you could set this to 25 and set the expiration to one hour and you should be safe.
-Always err on the side of caution, you don't want to run out of stock when someone believes they will get an item.
-If in doubt, don't use this option.
+You can set this by using the 'wc_csr_min_no_check' filter.  This is an advanced option and should only be used on high
+volume sites with predictable orders.  The setting to use depends on your stock quantites and how much you expect to
+sell.  If you have a stock of 100 and only expect to sell 10 per hour you could set this to 25 and set the expiration
+to one hour and you should be safe. Always err on the side of caution, you don't want to run out of stock when someone
+believes they will get an item.  If in doubt, don't use this option.
 
 ### What adjustments need to be made to caching? ###
 
@@ -66,6 +67,16 @@ following pages:" at the page cache and database cache settings.
 
 
 ## Changelog ##
+### 1.0 ###
+* Add 2 new options to append strings to the pending order text.
+* Add 'wc_csr_stock_pending_text' filter (used internally) to replace pending order text
+* Add a link from the plugins page to settings (Thanks Gabriel Reguly!)
+* Cache stock value so we don't continually decrement the value every time we check it
+* Add call to action 'wc_csr_before_remove_expired_item' to remove_expired_item function
+* Add 'wc_csr_adjust_cart_expiration' action to adjust existing items expire time
+* Move 'Expire Custom Key' from config to filter 'wc_csr_expire_custom_key'
+* Move 'Minimum Stock to Skip Check' from config to a filter 'wc_csr_min_no_check'
+
 ### 0.75 ###
 * Allow countdown timer to be configured when it is shown (Always, Never, Only When Items are added)
 * Allow cart expiration to happen without managing being enabled
@@ -86,9 +97,12 @@ following pages:" at the page cache and database cache settings.
 
 * Make expiration strings nicer
 * Test with backordered products
-* Setup sanitizer for admin fields
 * Look into adding ajax and mini-cart notices
 * Take some screenshots for wordpress.org
-* Add option of displaying when an item might be available in addition to the 'stock_pending' message
 * Add some kind of indicator to cart so you know what items will expire
-* Add "Pending orders include X items added to your cart" to 'stock_pending' message
+* Add option to refresh page (or do something) when items have expired from cart
+
+## Thanks ##
+
+* Bob DeYoung of [BlueLotusWorks](https://github.com/bluelotusworks) for testing, feedback, and support
+
