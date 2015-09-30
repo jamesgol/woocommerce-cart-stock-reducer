@@ -2,11 +2,11 @@
 /*
 Plugin Name: WooCommerce Cart Stock Reducer
 Description: Allow WooCommerce inventory stock to be reduced when adding items to cart and/or expire items from the cart
-Version: 0.75
+Version: 1.0
 Author Name: James Golovich
 License: GPL2
 Requires at least: 4.0
-Tested up to: 4.1.1
+Tested up to: 4.3.1
 */
 
 /*  Copyright 2014  James Golovich  (email : james@gnuinter.net)
