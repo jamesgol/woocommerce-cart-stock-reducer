@@ -302,7 +302,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function update_cart_validation( $valid, $cart_item_key, $values, $quantity ) {
 		$available = $this->get_stock_available( $values[ 'product_id' ], $values[ 'variation_id' ], $values[ 'data' ], true );
-		if ( $available < $quantity ) {
+		if ( is_numeric( $available ) && $available < $quantity ) {
 			wc_add_notice( __( 'Quantity requested not available', 'woocommerce-cart-stock-reducer' ), 'error' );
 			$valid = false;
 		}
