@@ -106,7 +106,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function expire_notice_added() {
 		foreach ( wc_get_notices() as $type => $notices ) {
 			foreach ( $notices as $notice ) {
-				if ( strpos( $notice, 'wc-csr-countdown' ) ) {
+				if ( false !== strpos( $notice, 'wc-csr-countdown' ) ) {
 					return true;
 				}
 			}
