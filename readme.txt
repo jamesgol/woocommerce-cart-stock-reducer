@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: woocommerce
 Requires at least: 4.0
 Tested up to: 4.3.1
-Stable tag: 0.75
+Stable tag: 1.0
 WC requires at least: 2.2
 WC tested up to: 2.4.7
 License: GPLv2 or later
