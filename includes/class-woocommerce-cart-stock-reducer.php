@@ -605,13 +605,20 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function validate_expire_time_field( $key ) {
 		$expire_time = sanitize_text_field( $_POST[ $this->plugin_id . $this->id . '_' . $key ] );
+		$expire_enabled_key = $this->plugin_id . $this->id . '_expire_items';
+		$expire_enabled = isset( $_POST[ $expire_enabled_key ] ) ? absint( $_POST[ $expire_enabled_key ] ) : 0;
 
-		$time = strtotime( $expire_time );
-		if ( ! $time ) {
-			$this->errors[] = sprintf( __( 'Invalid Expire Time: %s', 'woocommerce-cart-stock-reducer' ), $expire_time );
-		} elseif ( $time < time() ) {
-			$this->errors[] = sprintf( __( 'Cannot set Expire Time that would be in the past: %s', 'woocommerce-cart-stock-reducer' ), $expire_time );
+		if ( !empty( $expire_time ) ) {
+			$time = strtotime( $expire_time );
+			if ( ! $time ) {
+				$this->errors[] = sprintf( __( 'Invalid Expire Time: %s', 'woocommerce-cart-stock-reducer' ), $expire_time );
+			} elseif ( false !== $time && $time < time() ) {
+				$this->errors[] = sprintf( __( 'Cannot set Expire Time that would be in the past: %s', 'woocommerce-cart-stock-reducer' ), $expire_time );
+			}
+		} elseif ( 1 === $expire_enabled ) {
+			$this->errors[] = sprintf( __( 'Expire time must be set if expiration is enabled', 'woocommerce-cart-stock-reducer' ) );
 		}
+
 		return $expire_time;
 	}
 
