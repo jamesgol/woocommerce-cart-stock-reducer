@@ -67,7 +67,7 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
-= Dev =
+= 1.05 =
 * Fix issue with url in 'View Cart' button being null
 * Add loading translations
 * Allow expiration time to be empty if expiration is disabled
