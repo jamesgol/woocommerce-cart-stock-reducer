@@ -42,7 +42,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
 			add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
 			add_filter( 'wc_csr_stock_pending_text', array( $this, 'replace_stock_pending_text' ), 10, 3 );
-			add_action( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
+			add_filter( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
 			add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
 		}
 
@@ -84,8 +84,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * Called from hook 'woocommerce_add_to_cart_redirect', odd choice but it gets called after a succesful save of an item
 	 * Need to force the session to be saved so the quantity can be correctly calculated for the page load in this same session
 	 */
-	public function force_session_save() {
+	public function force_session_save( $default ) {
 		WC()->session->save_data();
+		return $default;
 	}
 
 	/**
