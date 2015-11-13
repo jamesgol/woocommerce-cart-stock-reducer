@@ -4,7 +4,7 @@
 **Tags:** woocommerce  
 **Requires at least:** 4.0  
 **Tested up to:** 4.3.1  
-**Stable tag:** 1.03  
+**Stable tag:** 1.05  
 **WC requires at least:** 2.2  
 **WC tested up to:** 2.4.7  
 **License:** GPLv2 or later  
@@ -67,6 +67,11 @@ following pages:" at the page cache and database cache settings.
 
 
 ## Changelog ##
+### Dev ###
+* Fix issue with url in 'View Cart' button being null
+* Add loading translations
+* Allow expiration time to be empty if expiration is disabled
+
 ### 1.03 ###
 * Had issues with my deployment script so had to bump version up
 
