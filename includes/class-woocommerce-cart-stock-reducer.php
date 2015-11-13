@@ -54,12 +54,17 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
 		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
-		// @todo Add function to call load_plugin_textdomain()
+		add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
 		
 		// Direct link to our settings page
 		add_filter( 'plugin_action_links', array( $this, 'action_links' ), 10, 2 );
 
 	}
+
+	public function load_plugin_textdomain() {
+		load_plugin_textdomain( 'woocommerce-cart-stock-reducer', false, plugin_basename( dirname( __FILE__ ) ) . '/../languages/' );
+	}
+
 	 /**
 	  * Generate a direct link to settings page within WooCommerce
 	  *
