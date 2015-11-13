@@ -67,6 +67,10 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
+= Dev =
+* Add loading translations
+* Allow expiration time to be empty if expiration is disabled
+
 = 1.03 =
 * Had issues with my deployment script so had to bump version up
 
