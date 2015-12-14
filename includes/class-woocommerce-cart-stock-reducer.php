@@ -50,6 +50,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		add_action( 'woocommerce_add_to_cart', array( $this, 'add_to_cart' ), 10,6 );
 		add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 2 );
 		add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'check_expired_items' ), 10 );
+		add_action( 'woocommerce_check_cart_items', array( $this, 'check_cart_items' ), 10 );
 		add_action( 'woocommerce_before_main_content', array( $this, 'check_cart_items' ), 10 );
 		add_filter( 'woocommerce_notice_types', array( $this, 'add_countdown_to_notice' ), 10 );
 		add_filter( 'wc_add_to_cart_message', array( $this, 'add_to_cart_message' ), 10, 2 );
