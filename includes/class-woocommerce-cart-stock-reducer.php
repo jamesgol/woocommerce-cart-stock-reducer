@@ -73,7 +73,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	  */
 	public function action_links( $links, $file ) {
 		if ( 'woocommerce-cart-stock-reducer/woocommerce-cart-stock-reducer.php' == $file ) {
-			$settings_link = '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=integration' ) . '">' . __( 'Settings' ) . '</a>';
+			$settings_link = '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=integration' ) . '">' . __( 'Settings', 'woocommerce-cart-stock-reducer' ) . '</a>';
 			// make the 'Settings' link appear first
 			array_unshift( $links, $settings_link );
 		}
