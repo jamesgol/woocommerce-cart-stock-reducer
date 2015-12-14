@@ -3,10 +3,10 @@
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY  
 **Tags:** woocommerce  
 **Requires at least:** 4.0  
-**Tested up to:** 4.3.1  
-**Stable tag:** 1.05  
+**Tested up to:** 4.4  
+**Stable tag:** 1.15  
 **WC requires at least:** 2.2  
-**WC tested up to:** 2.4.7  
+**WC tested up to:** 2.4.12  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -67,6 +67,10 @@ following pages:" at the page cache and database cache settings.
 
 
 ## Changelog ##
+### 1.15 ###
+* Fix countdown not showing when using cart widget to delete item
+* Fix minor notice being logged when used with some other unknown plugin
+
 ### 1.05 ###
 * Fix issue with url in 'View Cart' button being null
 * Add loading translations
