@@ -49,7 +49,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		// Actions/Filters related to cart item expiration
 		add_action( 'woocommerce_add_to_cart', array( $this, 'add_to_cart' ), 10,6 );
 		add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 2 );
-		add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'check_cart_items' ), 10 );
+		add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'check_expired_items' ), 10 );
+		add_action( 'woocommerce_before_main_content', array( $this, 'check_cart_items' ), 10 );
+		add_filter( 'woocommerce_notice_types', array( $this, 'add_countdown_to_notice' ), 10 );
 		add_filter( 'wc_add_to_cart_message', array( $this, 'add_to_cart_message' ), 10, 2 );
 
 		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
@@ -122,9 +124,45 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 
 	/**
+	 * Called by 'woocommerce_notice_types' filter to make sure any time a countdown is displayed the javascript is included
+	 * @param $type
+	 * @return mixed
+	 */
+	public function add_countdown_to_notice( $type ) {
+		if ( $this->expire_notice_added() ) {
+			$expire_soonest = $this->expire_items();
+			$this->countdown( $expire_soonest );
+		}
+		return $type;
+	}
+
+	/**
 	 * Called by 'woocommerce_check_cart_items' action to expire items from cart
 	 */
 	public function check_cart_items( ) {
+		$expire_soonest = $this->expire_items();
+		if ( 'always' === $this->expire_countdown && 0 !== $expire_soonest && ! is_ajax() && 'POST' !== strtoupper( $_SERVER[ 'REQUEST_METHOD' ] ) && !$this->expire_notice_added()  ) {
+			$item_expire_span = '<span id="wc-csr-countdown"></span>';
+			// @todo Adjust this text?  Once it is finalized switch to using _n() to pluralize item/items
+			$expiring_cart_notice = apply_filters( 'wc_csr_expiring_cart_notice', sprintf( __( "Please checkout within %s to guarantee your items don't expire.", 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $expire_soonest );
+			wc_add_notice( $expiring_cart_notice, 'notice' );
+
+		}
+	}
+
+	/**
+	 * Called by 'woocommerce_cart_loaded_from_session' action to expire items from cart
+	 */
+	public function check_expired_items( ) {
+		$this->expire_items();
+	}
+
+
+	/**
+	 * Expire items and returns the soonest time an item expires
+	 * @return int Time when an item expires
+	 */
+	public function expire_items() {
 		$expire_soonest = 0;
 		$item_expiring_soonest = null;
 		$cart = WC()->cart;
@@ -141,13 +179,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			}
 
 		}
-		if ( 'always' === $this->expire_countdown && 0 !== $expire_soonest && ! is_ajax() && 'POST' !== strtoupper( $_SERVER[ 'REQUEST_METHOD' ] ) && !$this->expire_notice_added()  ) {
-			$item_expire_span = '<span id="wc-csr-countdown"></span>';
-			// @todo Adjust this text?  Once it is finalized switch to using _n() to pluralize item/items
-			$expiring_cart_notice = apply_filters( 'wc_csr_expiring_cart_notice', sprintf( __( "Please checkout within %s to guarantee your items don't expire.", 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $expire_soonest, $item_expiring_soonest );
-			wc_add_notice( $expiring_cart_notice, 'notice' );
-			$this->countdown( $expire_soonest );
-		}
+		return $expire_soonest;
+
 	}
 
 	/**
