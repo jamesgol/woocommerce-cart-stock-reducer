@@ -329,7 +329,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 *
 	 * @return string
 	 */
-	function add_to_cart_message( $message, $product_id ) {
+	function add_to_cart_message( $message, $product_id = null ) {
 		if ( null != $this->item_expire_message ) {
 			$message .= '  ' . $this->item_expire_message;
 		}
