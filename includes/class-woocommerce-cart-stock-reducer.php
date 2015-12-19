@@ -581,8 +581,16 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
     	*/
 		$results = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE option_name LIKE '_wc_session_%' AND option_value LIKE '%\"{$field}\";i:{$item};%'", OBJECT );
 		if ( $results ) {
+			$WC = WC();
+			if ( isset( $WC, $WC->session ) ) {
+				// A user report a fatal error when trying to call get_customer_id.
+				// Even though it was likely some other plugin/themes fault, lets play safely.
+				$customer_id = $WC->session->get_customer_id();
+			} else {
+				$customer_id = null;
+			}
 			foreach ( $results as $result ) {
-				if ( $result->option_name === '_wc_session_' . WC()->session->get_customer_id() ) {
+				if ( null !== $customer_id && $result->option_name === '_wc_session_' . $customer_id ) {
 					$row_in_own_cart = true;
 				} else {
 					$row_in_own_cart = false;

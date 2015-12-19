@@ -67,6 +67,9 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
+= Dev =
+* Fix fatal error when something else destroys the users session
+
 = 1.15 =
 * Fix countdown not showing when using cart widget to delete item
 * Fix minor notice being logged when used with some other unknown plugin
