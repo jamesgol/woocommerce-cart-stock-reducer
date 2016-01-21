@@ -280,7 +280,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			// Don't add any more javascript code here, if it needs added to move it to an external file
 			$code = '<script type="text/javascript">';
 			foreach ( $this->countdown_seconds as $class => $time ) {
-				$code .= "jQuery('#" . $class . "').countdown({until: '+" . $time . "', format: 'dhmS', layout: '{d<}{dn} {dl} {d>}{h<}{hn} {hl} {h>}{m<}{mn} {ml} {m>}{s<}{sn} {sl}{s>}'});";
+				$code .= "jQuery('#" . $class . "').countdown({until: '+" . $time . "', format: 'dhmS', layout: '{d<}{dn} {dl} {d>}{h<}{hn} {hl} {h>}{m<}{mn} {ml} {m>}{s<}{sn} {sl}{s>}', expiryUrl: window.location.href});";
 			}
 			$code .= '</script>';
 

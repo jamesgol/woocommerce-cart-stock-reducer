@@ -68,6 +68,7 @@ following pages:" at the page cache and database cache settings.
 
 == Changelog ==
 = Dev =
+* Refresh the page when an expiration countdown hits 0
 * Allow sessions to be loaded from new table in WooCommerce >= 2.5
 * Fix fatal error when something else destroys the users session
 
