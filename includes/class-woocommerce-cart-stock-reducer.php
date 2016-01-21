@@ -197,7 +197,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$expired_cart_notice = apply_filters( 'wc_csr_expired_cart_notice', sprintf( __( "Sorry, '%s' was removed from your cart because you didn't checkout before the expiration time.", 'woocommerce-cart-stock-reducer' ), $cart->cart_contents[ $cart_id ][ 'data' ]->get_title() ), $cart_id, $cart );
 			wc_add_notice( $expired_cart_notice, 'error' );
 			do_action( 'wc_csr_before_remove_expired_item', $cart_id, $cart );
-			unset( $cart->cart_contents[ $cart_id ] );
+			$cart->remove_cart_item( $cart_id );
 			WC()->session->set('cart', $cart->cart_contents);
 		}
 

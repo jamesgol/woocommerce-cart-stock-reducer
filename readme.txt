@@ -67,6 +67,9 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
+= Dev =
+* Make sure total price is updated when an item is expired
+
 = 1.25 =
 * If you are using WooCommerce >= 2.5 you must update to this version
 * Refresh the page when an expiration countdown hits 0
