@@ -4,9 +4,9 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: woocommerce
 Requires at least: 4.0
 Tested up to: 4.4
-Stable tag: 1.15
+Stable tag: 1.25
 WC requires at least: 2.2
-WC tested up to: 2.4.12
+WC tested up to: 2.5.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,7 +67,8 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
-= Dev =
+= 1.25 =
+* If you are using WooCommerce >= 2.5 you must update to this version
 * Refresh the page when an expiration countdown hits 0
 * Allow sessions to be loaded from new table in WooCommerce >= 2.5
 * Fix fatal error when something else destroys the users session
