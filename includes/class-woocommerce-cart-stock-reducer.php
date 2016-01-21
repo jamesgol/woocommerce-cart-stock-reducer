@@ -579,7 +579,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		 * that using get_option and an external cache will be faster on a heavy site.
 		 * Need to benchmark... In my free time.
     	*/
-		$results = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE option_name LIKE '_wc_session_%' AND option_value LIKE '%\"{$field}\";i:{$item};%'", OBJECT );
+		if ( version_compare( WOOCOMMERCE_VERSION, '2.5' ) >= 0 ) {
+			// WooCommerce >= 2.5 stores session data in a separate table
+			$results = $wpdb->get_results( "SELECT session_key, session_value FROM {$wpdb->prefix}woocommerce_sessions WHERE session_value LIKE '%\"{$field}\";i:{$item};%'", OBJECT );
+		} else {
+			$results = $wpdb->get_results( "SELECT option_name, option_value as session_value FROM {$wpdb->options} WHERE option_name LIKE '_wc_session_%' AND option_value LIKE '%\"{$field}\";i:{$item};%'", OBJECT );
+		}
+
 		if ( $results ) {
 			$WC = WC();
 			if ( isset( $WC, $WC->session ) ) {
@@ -590,7 +596,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				$customer_id = null;
 			}
 			foreach ( $results as $result ) {
-				if ( null !== $customer_id && $result->option_name === '_wc_session_' . $customer_id ) {
+				if ( null !== $customer_id &&
+					( isset( $result->session_key ) && $result->session_key === $customer_id ) ||
+					( isset( $result->option_name ) && $result->option_name === '_wc_session_' . $customer_id ) ) {
 					$row_in_own_cart = true;
 				} else {
 					$row_in_own_cart = false;
@@ -598,7 +606,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				if ( true === $ignore && true === $row_in_own_cart ) {
 					continue;
 				}
-				$session = unserialize( $result->option_value );
+				$session = unserialize( $result->session_value );
 				if ( isset( $session[ 'cart' ] ) ) {
 					$cart = unserialize( $session[ 'cart' ] );
 					foreach ( $cart as $key => $row ) {
