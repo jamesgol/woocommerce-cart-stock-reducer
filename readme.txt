@@ -68,6 +68,8 @@ following pages:" at the page cache and database cache settings.
 
 == Changelog ==
 = Dev =
+* Fix issue causing auto refreshes from adding items to cart when AJAX isn't used
+* Fix bug where we would sometimes act on variations that weren't marked managed
 * Make sure total price is updated when an item is expired
 
 = 1.25 =
