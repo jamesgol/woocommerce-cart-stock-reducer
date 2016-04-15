@@ -299,7 +299,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function add_cart_item( $item, $key ) {
 		if ( isset( $item[ 'data' ] ) ) {
 			$product = $item[ 'data' ];
-			if ( 'yes' === $this->expire_items ) {
+			if ( 'yes' === $this->expire_items && $this->item_managing_stock( $item['product_id'], $item['variation_id'] ) ) {
 				$expire_time_text = null;
 				if ( ! empty( $this->expire_time ) ) {
 					// Check global expiration time
@@ -395,7 +395,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$managing_stock = $product->managing_stock();
 			if ( true === $managing_stock ) {
 				$id = $variation_id;
-			} elseif ( 'parent' ) {
+			} elseif ( 'parent' === $managing_stock ) {
 				$id = $product_id;
 			}
 		} else {
