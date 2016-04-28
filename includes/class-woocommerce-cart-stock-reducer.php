@@ -523,6 +523,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		$id = $this->item_managing_stock( $product_id, $variation_id );
 
+		if ( false === $id ) {
+			// Item is not a managed item, do not return quantity
+			return null;
+		}
+
 		if ( null === $product ) {
 			$product = wc_get_product( $id );
 		}
