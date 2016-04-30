@@ -72,6 +72,7 @@ following pages:" at the page cache and database cache settings.
 * Fix bug where we would sometimes act on variations that weren't marked managed
 * Make sure total price is updated when an item is expired
 * Ensure we return proper quantity to non managed stock items
+* Move cart expiration check to an action that will always be called regardless of which theme is used
 
 = 1.25 =
 * If you are using WooCommerce >= 2.5 you must update to this version
