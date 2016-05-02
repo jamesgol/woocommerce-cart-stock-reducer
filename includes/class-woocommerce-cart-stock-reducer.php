@@ -122,6 +122,22 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return false;
 	}
 
+	public function remove_expire_notice() {
+		$entries_removed = 0;
+		$wc_notices = wc_get_notices();
+		foreach ( $wc_notices as $type => $notices ) {
+			foreach ( $notices as $id => $notice ) {
+				if ( false !== strpos( $notice, 'wc-csr-countdown' ) ) {
+					$entries_removed++;
+					unset( $wc_notices[ $type ][ $id ] );
+				}
+			}
+		}
+		if ( $entries_removed > 0 ) {
+			WC()->session->set( 'wc_notices', $wc_notices );
+		}
+		return $entries_removed;
+	}
 
 	/**
 	 * Called by 'woocommerce_notice_types' filter to make sure any time a countdown is displayed the javascript is included
@@ -141,12 +157,19 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function check_cart_items( ) {
 		$expire_soonest = $this->expire_items();
-		if ( 'always' === $this->expire_countdown && 0 !== $expire_soonest && ! is_ajax() && 'POST' !== strtoupper( $_SERVER[ 'REQUEST_METHOD' ] ) && !$this->expire_notice_added()  ) {
+		if ( 'always' !== $this->expire_countdown || is_ajax() || 'POST' === strtoupper( $_SERVER[ 'REQUEST_METHOD' ] ) ) {
+			// Return quickly when we don't care about notices
+			return;
+		}
+		if ( 0 !== $expire_soonest && !$this->expire_notice_added()  ) {
 			$item_expire_span = '<span id="wc-csr-countdown"></span>';
 			// @todo Adjust this text?  Once it is finalized switch to using _n() to pluralize item/items
 			$expiring_cart_notice = apply_filters( 'wc_csr_expiring_cart_notice', sprintf( __( "Please checkout within %s to guarantee your items don't expire.", 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $expire_soonest );
 			wc_add_notice( $expiring_cart_notice, 'notice' );
 
+		} elseif ( 0 === $expire_soonest ) {
+			// Make sure a countdown notice is removed if there is not an item expiring
+			$this->remove_expire_notice();
 		}
 	}
 
