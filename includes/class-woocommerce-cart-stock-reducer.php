@@ -237,13 +237,26 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
 		if ( in_array( $this->expire_countdown, array( 'always', 'addonly') ) ) {
+			$earliest_expiration_time = null;
+			$number_items_expiring = 0;
 			$cart = WC()->cart;
 			foreach ( $cart->cart_contents as $cart_id => $item ) {
-				if ( $cart_item_key === $cart_id && isset( $item[ 'csr_expire_time' ] ) && !$this->expire_notice_added() ) {
-					$item_expire_span = '<span id="wc-csr-countdown"></span>';
-					$this->countdown( $item[ 'csr_expire_time' ] );
-					$this->item_expire_message = apply_filters( 'wc_csr_expire_notice', sprintf( __( 'Please checkout within %s or this item will be removed from your cart.', 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $item[ 'csr_expire_time' ], $item[ 'csr_expire_time_text' ] );
+				if ( isset( $item[ 'csr_expire_time' ] ) ) {
+					if ( $cart_item_key === $cart_id && ! $this->expire_notice_added() ) {
+						$item_expire_span = '<span id="wc-csr-countdown"></span>';
+						$this->countdown( $item['csr_expire_time'] );
+						$this->item_expire_message = apply_filters( 'wc_csr_expire_notice', sprintf( __( 'Please checkout within %s or this item will be removed from your cart.', 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $item['csr_expire_time'], $item['csr_expire_time_text'] );
+					} else {
+						if ( null === $earliest_expiration_time || $earliest_expiration_time < $item['csr_expire_time'] ) {
+							$earliest_expiration_time = $item['csr_expire_time'];
+							$number_items_expiring ++;
+						}
+					}
 				}
+
+			}
+			if ( $number_items_expiring > 0 ) {
+				$this->item_expire_message .= apply_filters( 'wc_csr_expire_notice_additional', sprintf( _n( ' There is %d item expiring sooner.', ' There are %d items expiring sooner.', $number_items_expiring, 'woocommerce-cart-stock-reducer' ), $number_items_expiring ), $cart_item_key, $number_items_expiring );
 			}
 		}
 	}
@@ -288,8 +301,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				// Only run this once per execution, in case we need to add more later
 				add_action('wp_footer', array($this, 'countdown_footer'), 25);
 				wp_enqueue_script('wc-csr-jquery-countdown');
+				$this->countdown_seconds[ $class ] = $time - time();
 			}
-			$this->countdown_seconds[ $class ] = $time - time();
 		}
 
 	}
