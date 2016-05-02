@@ -157,7 +157,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function check_cart_items( ) {
 		$expire_soonest = $this->expire_items();
-		if ( 'always' !== $this->expire_countdown || is_ajax() || 'POST' === strtoupper( $_SERVER[ 'REQUEST_METHOD' ] ) ) {
+		if ( 'always' !== $this->expire_countdown || is_admin() || is_ajax() || 'POST' === strtoupper( $_SERVER[ 'REQUEST_METHOD' ] ) ) {
 			// Return quickly when we don't care about notices
 			return;
 		}
@@ -189,6 +189,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$expire_soonest = 0;
 		$item_expiring_soonest = null;
 		$cart = WC()->cart;
+		if ( null === $cart ) {
+			return;
+		}
 		foreach ( $cart->cart_contents as $cart_id => $item ) {
 			if ( isset( $item[ 'csr_expire_time' ] ) ) {
 				if ( $this->is_expired( $item[ 'csr_expire_time' ] ) ) {
