@@ -194,9 +194,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( null === $cart ) {
 			return;
 		}
+		$order_awaiting_payment = WC()->session->get( 'order_awaiting_payment', null );
+
 		foreach ( $cart->cart_contents as $cart_id => $item ) {
 			if ( isset( $item[ 'csr_expire_time' ] ) ) {
-				if ( $this->is_expired( $item[ 'csr_expire_time' ] ) ) {
+				if ( $this->is_expired( $item[ 'csr_expire_time' ], $order_awaiting_payment ) ) {
 					// Item has expired
 					$this->remove_expired_item( $cart_id, $cart );
 				} elseif ( 0 === $expire_soonest || $item[ 'csr_expire_time' ] < $expire_soonest ) {
@@ -527,11 +529,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			}
 
 			if ( !empty( $this->stock_pending_expire_time ) && $this->expiration_time_cache( $item ) ) {
-				// Only append text if enabled and there are items that will expire
-				$pending_expire_text = str_ireplace( '%CSR_EXPIRE_TIME%', human_time_diff( time(), $this->expiration_time_cache( $item ) ), $this->stock_pending_expire_time );
-				// Was really hoping to use the jquery countdown here but the default WooCommerce templates
-				// call esc_html so I can't easily include a class here :(
-				$pending_text .= ' ' . $pending_expire_text;
+				if ( time() < $this->expiration_time_cache( $item ) ) {
+					// Only append text if enabled and there are items that will expire
+					$pending_expire_text = str_ireplace( '%CSR_EXPIRE_TIME%', human_time_diff( time(), $this->expiration_time_cache( $item ) ), $this->stock_pending_expire_time );
+					// Was really hoping to use the jquery countdown here but the default WooCommerce templates
+					// call esc_html so I can't easily include a class here :(
+					$pending_text .= ' ' . $pending_expire_text;
+				}
 			}
 		}
 
@@ -664,7 +668,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				if ( isset( $session[ 'cart' ] ) ) {
 					$cart = unserialize( $session[ 'cart' ] );
 					foreach ( $cart as $key => $row ) {
-						if ( isset( $row[ 'csr_expire_time' ] ) && $this->is_expired( $row[ 'csr_expire_time' ] ) ) {
+						if ( isset( $row[ 'csr_expire_time' ] ) && $this->is_expired( $row[ 'csr_expire_time' ], isset( $session[ 'order_awaiting_payment' ] ) ? $session[ 'order_awaiting_payment' ] : null ) ) {
 							// Skip items that are expired in carts
 							continue;
 						}
@@ -691,11 +695,18 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * Check if $expire_time has passed
 	 *
 	 * @param int|string $expire_time UNIX timestamp for expiration or 'never' if item never expires
+	 * @param int $order_awaiting_payment WooCommerce Order ID of order associated with session
 	 *
 	 * @return bool true if expired
 	 */
-	protected function is_expired( $expire_time = 'never' ) {
+	protected function is_expired( $expire_time = 'never', $order_awaiting_payment = null ) {
 		$expired = false;
+		if ( null !== $order_awaiting_payment && ( $order = new WC_Order( $order_awaiting_payment ) ) ) {
+			// If a session is marked with an Order ID in 'order_awaiting_payment' check the status to decide if we should skip the expiration check
+			if ( in_array( $order->post_status, apply_filters( 'wc_csr_expire_ignore_status', array(), $order->post_status, $expire_time, $order_awaiting_payment ) ) ) {
+				return false;
+			}
+		}
 		if ( 'never' === $expire_time ) {
 			// This should never happen, but better to be safe
 			$expired = false;

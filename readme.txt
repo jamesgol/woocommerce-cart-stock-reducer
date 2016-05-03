@@ -75,6 +75,7 @@ following pages:" at the page cache and database cache settings.
 * Move cart expiration check to an action that will always be called regardless of which theme is used
 * Add count of number of expiring items to notice when adding new item and set the countdown for the newly added item
 * Include variation info in notice when item has expired (if WooCommerce version >= 2.5)
+* Add filter 'wc_csr_expire_ignore_status' to allow passing array of WooCommerce order status to ignore expiration on
 
 = 1.25 =
 * If you are using WooCommerce >= 2.5 you must update to this version
