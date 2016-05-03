@@ -3,10 +3,10 @@ Contributors: jamesgol
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY
 Tags: woocommerce
 Requires at least: 4.0
-Tested up to: 4.4
-Stable tag: 1.25
+Tested up to: 4.5.1
+Stable tag: 1.50
 WC requires at least: 2.2
-WC tested up to: 2.5.0
+WC tested up to: 2.6.0-beta-1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,7 +67,7 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
-= Dev =
+= 1.50 =
 * Fix issue causing auto refreshes from adding items to cart when AJAX isn't used
 * Fix bug where we would sometimes act on variations that weren't marked managed
 * Make sure total price is updated when an item is expired
