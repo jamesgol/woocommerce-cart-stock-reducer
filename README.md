@@ -3,10 +3,10 @@
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY  
 **Tags:** woocommerce  
 **Requires at least:** 4.0  
-**Tested up to:** 4.4  
-**Stable tag:** 1.25  
+**Tested up to:** 4.5.1  
+**Stable tag:** 1.50  
 **WC requires at least:** 2.2  
-**WC tested up to:** 2.5.0  
+**WC tested up to:** 2.6.0-beta-1  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -67,6 +67,16 @@ following pages:" at the page cache and database cache settings.
 
 
 ## Changelog ##
+### 1.50 ###
+* Fix issue causing auto refreshes from adding items to cart when AJAX isn't used
+* Fix bug where we would sometimes act on variations that weren't marked managed
+* Make sure total price is updated when an item is expired
+* Ensure we return proper quantity to non managed stock items
+* Move cart expiration check to an action that will always be called regardless of which theme is used
+* Add count of number of expiring items to notice when adding new item and set the countdown for the newly added item
+* Include variation info in notice when item has expired (if WooCommerce version >= 2.5)
+* Add filter 'wc_csr_expire_ignore_status' to allow passing array of WooCommerce order status to ignore expiration on
+
 ### 1.25 ###
 * If you are using WooCommerce >= 2.5 you must update to this version
 * Refresh the page when an expiration countdown hits 0
