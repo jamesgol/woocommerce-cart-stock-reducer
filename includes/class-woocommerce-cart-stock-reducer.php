@@ -47,12 +47,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 
 		// Actions/Filters related to cart item expiration
-		add_action( 'woocommerce_add_to_cart', array( $this, 'add_to_cart' ), 10,6 );
-		add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 2 );
-		add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'check_expired_items' ), 10 );
-		add_action( 'wp', array( $this, 'check_cart_items' ), 10 );
-		add_filter( 'woocommerce_notice_types', array( $this, 'add_countdown_to_notice' ), 10 );
-		add_filter( 'wc_add_to_cart_message', array( $this, 'add_to_cart_message' ), 10, 2 );
+		if ( ! is_admin() || defined( 'DOING_AJAX' ) && ! defined( 'DOING_CRON' ) ) {
+			add_action( 'woocommerce_add_to_cart', array( $this, 'add_to_cart' ), 10, 6 );
+			add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 2 );
+			add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'check_expired_items' ), 10 );
+			add_action( 'wp', array( $this, 'check_cart_items' ), 10 );
+			add_filter( 'woocommerce_notice_types', array( $this, 'add_countdown_to_notice' ), 10 );
+			add_filter( 'wc_add_to_cart_message', array( $this, 'add_to_cart_message' ), 10, 2 );
+		}
 
 		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
 		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
@@ -157,7 +159,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function check_cart_items( ) {
 		$expire_soonest = $this->expire_items();
-		if ( 'always' !== $this->expire_countdown || is_admin() || is_ajax() || 'POST' === strtoupper( $_SERVER[ 'REQUEST_METHOD' ] ) ) {
+		if ( 'always' !== $this->expire_countdown || 'POST' === strtoupper( $_SERVER[ 'REQUEST_METHOD' ] ) ) {
 			// Return quickly when we don't care about notices
 			return;
 		}
