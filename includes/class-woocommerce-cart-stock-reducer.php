@@ -11,6 +11,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	// Variables used for specific session
 	private $item_expire_message = null;
 	private $countdown_seconds   = array();
+	private $expiration_notice_added = false;
 
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
@@ -29,7 +30,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->expire_items        = $this->get_option( 'expire_items' );
 		$this->expire_countdown    = $this->get_option( 'expire_countdown' );
 		$this->expire_time         = $this->get_option( 'expire_time' );
-
 
 		// Actions/Filters to setup WC_Integration elements
 		add_action( 'woocommerce_update_options_integration_' .  $this->id, array( $this, 'process_admin_options' ) );
@@ -51,9 +51,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_action( 'woocommerce_add_to_cart', array( $this, 'add_to_cart' ), 10, 6 );
 			add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 2 );
 			add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'check_expired_items' ), 10 );
-			add_action( 'wp', array( $this, 'check_cart_items' ), 10 );
 			add_filter( 'woocommerce_notice_types', array( $this, 'add_countdown_to_notice' ), 10 );
 			add_filter( 'wc_add_to_cart_message', array( $this, 'add_to_cart_message' ), 10, 2 );
+			// Some Third-Party themes do not call 'woocommerce_before_main_content' action so let's call it on other likely actions
+			add_action( 'woocommerce_before_single_product', array( $this, 'check_cart_items' ), 9 );
+			add_action( 'woocommerce_check_cart_items', array( $this, 'check_cart_items' ), 9 );
+			add_action( 'woocommerce_before_shop_loop', array( $this, 'check_cart_items' ), 9 );
+
 		}
 
 		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
@@ -114,9 +118,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	public function expire_notice_added() {
+		if ( true === $this->expiration_notice_added ) {
+			// Don't loop through notices if we already know it has been added
+			return true;
+		}
 		foreach ( wc_get_notices() as $type => $notices ) {
 			foreach ( $notices as $notice ) {
 				if ( false !== strpos( $notice, 'wc-csr-countdown' ) ) {
+					$this->expiration_notice_added = true;
 					return true;
 				}
 			}
