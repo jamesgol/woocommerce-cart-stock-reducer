@@ -4,7 +4,7 @@
 **Tags:** woocommerce  
 **Requires at least:** 4.0  
 **Tested up to:** 4.5.1  
-**Stable tag:** 1.50  
+**Stable tag:** 1.55  
 **WC requires at least:** 2.2  
 **WC tested up to:** 2.6.0-beta-1  
 **License:** GPLv2 or later  
@@ -67,6 +67,9 @@ following pages:" at the page cache and database cache settings.
 
 
 ## Changelog ##
+### 1.55 ###
+* Move cart expiration check so it does not happen on every page load
+
 ### 1.50 ###
 * Fix issue causing auto refreshes from adding items to cart when AJAX isn't used
 * Fix bug where we would sometimes act on variations that weren't marked managed
