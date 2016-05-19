@@ -30,6 +30,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->expire_items        = $this->get_option( 'expire_items' );
 		$this->expire_countdown    = $this->get_option( 'expire_countdown' );
 		$this->expire_time         = $this->get_option( 'expire_time' );
+		$this->ignore_status       = $this->get_option( 'ignore_status', array() );
 
 		// Actions/Filters to setup WC_Integration elements
 		add_action( 'woocommerce_update_options_integration_' .  $this->id, array( $this, 'process_admin_options' ) );
@@ -712,7 +713,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$expired = false;
 		if ( null !== $order_awaiting_payment && ( $order = new WC_Order( $order_awaiting_payment ) ) ) {
 			// If a session is marked with an Order ID in 'order_awaiting_payment' check the status to decide if we should skip the expiration check
-			if ( in_array( $order->post_status, apply_filters( 'wc_csr_expire_ignore_status', array(), $order->post_status, $expire_time, $order_awaiting_payment ) ) ) {
+			if ( in_array( $order->post_status, apply_filters( 'wc_csr_expire_ignore_status', $this->ignore_status, $order->post_status, $expire_time, $order_awaiting_payment ) ) ) {
 				return false;
 			}
 		}
@@ -822,6 +823,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 											  'addonly' => __( 'Only when items are added', 'woocommerce-cart-stock-reducer' ),
 											  'never' => __( 'Never', 'woocommerce-cart-stock-reducer' ) ),
 				'description'       => __( 'When to display a countdown to expiration', 'woocommerce-cart-stock-reducer' ),
+			),
+			'ignore_status' => array(
+				'title'             => __( 'Ignore Order Status', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'multiselect',
+				'default'           => array(),
+				'options'           => wc_get_order_statuses(),
+				'description'       => __( '(Advanced Setting) WooCommerce order status that prohibit expiring items from cart', 'woocommerce-cart-stock-reducer' ),
 			),
 		);
 	}

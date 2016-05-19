@@ -67,6 +67,9 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
+= Dev =
+* Add configuration option to set WooCommerce order status to ignore expiration on
+
 = 1.55 =
 * Move cart expiration check so it does not happen on every page load
 
