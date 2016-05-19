@@ -45,6 +45,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_filter( 'wc_csr_stock_pending_text', array( $this, 'replace_stock_pending_text' ), 10, 3 );
 			add_filter( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
 			add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
+			add_filter( 'woocommerce_get_undo_url', array( $this, 'get_undo_url' ), 10, 2 );
 		}
 
 		// Actions/Filters related to cart item expiration
@@ -313,6 +314,35 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				WC()->session->set('cart', $cart->cart_contents);
 			}
 		}
+	}
+
+	/**
+	 * Called by 'woocommerce_get_undo_url' filter to change URL if item is managed
+	 *
+	 * @param string $url Default Undo URL
+	 * @param null|string $cart_item_key Item key from users cart
+	 *
+	 * @return string URL for Undo link
+	 */
+	public function get_undo_url( $url, $cart_item_key = null ) {
+		if ( null === $cart_item_key ) {
+			$args = wp_parse_args( parse_url( $url, PHP_URL_QUERY ) );
+			if ( isset( $args, $args[ 'undo_item' ] ) ) {
+				$cart_item_key = $args[ 'undo_item' ];
+			}
+		}
+
+		$cart = WC()->cart;
+		if ( isset( $cart_item_key, $cart, $cart->removed_cart_contents[ $cart_item_key ] ) ) {
+			$cart_item = $cart->removed_cart_contents[ $cart_item_key ];
+			if ( false !== $this->item_managing_stock( $cart_item[ 'product_id' ], $cart_item[ 'variation_id' ] ) ) {
+				// Only replace the URL if the item has managed stock
+				$product = wc_get_product( empty( $cart_item[ 'variation_id' ] ) ? $cart_item[ 'product_id' ] : $cart_item[ 'product_id' ] );
+				$url = $product->get_permalink();
+			}
+		}
+
+		return $url;
 	}
 
 	/**
