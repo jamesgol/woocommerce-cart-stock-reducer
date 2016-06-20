@@ -1,0 +1,51 @@
+# Translation of Stable (latest release) in Spanish (Spain)
+# This file is distributed under the same license as the Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2016-06-20 16:05+0100\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Poedit 1.6.5\n"
+"Project-Id-Version: Stable (latest release)\n"
+"POT-Creation-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_ES\n"
+
+#: include/class-woocommerce-cart-stock-reducer.php:178
+msgid "Please checkout within %s to guarantee your items don't expire."
+msgstr ""
+"Por favor, finalice su compra en %s para garantizar que sus productos son "
+"reservados."
+
+#: include/class-woocommerce-cart-stock-reducer.php:243
+msgid ""
+"Sorry, '%s' was removed from your cart because you didn't checkout before "
+"the expiration time."
+msgstr ""
+"Lo sentimos, '%s' ha sido eliminado de tu carrito porque no lo has comprado "
+"antes de que finalice el tiempo de reserva."
+
+#: include/class-woocommerce-cart-stock-reducer.php:272
+msgid "Please checkout within %s or this item will be removed from your cart."
+msgstr ""
+"Por favor, finalice su compra en %s o este producto dejará de estar "
+"reservado."
+
+#: include/class-woocommerce-cart-stock-reducer.php:283
+msgid "There is %d item expiring sooner."
+msgstr "Hay %d producto que dejará de estar reservado pronto."
+
+#: include/class-woocommerce-cart-stock-reducer.php:283
+msgid "There are %d items expiring sooner."
+msgstr "Hay %d productos que dejarán de estar reservados pronto."
+
+#: include/class-woocommerce-cart-stock-reducer.php:414
+msgid "Quantity requested not available"
+msgstr "Cantidad requerida no disponible"
+
+#: include/class-woocommerce-cart-stock-reducer.php:434
+msgid "Item is no longer available"
+msgstr "Este producto ya no está disponible"
