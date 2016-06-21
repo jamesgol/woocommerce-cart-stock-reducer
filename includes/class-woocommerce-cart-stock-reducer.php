@@ -19,7 +19,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->method_title       = __( 'Cart Stock Reducer', 'woocommerce-cart-stock-reducer' );
 		$this->method_description = __( 'Allow WooCommerce inventory stock to be reduced when adding items to cart', 'woocommerce-cart-stock-reducer' );
 		$this->plugins_url        = plugins_url( '/', dirname( __FILE__ ) );
-		
 		// Load the settings.
 		$this->init_form_fields();
 		$this->init_settings();
@@ -32,6 +31,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->expire_items        = $this->get_option( 'expire_items' );
 		$this->expire_countdown    = $this->get_option( 'expire_countdown' );
 		$this->expire_time         = $this->get_option( 'expire_time' );
+		$this->ignore_status       = $this->get_option( 'ignore_status', array() );
 
 		// Actions/Filters to setup WC_Integration elements
 		add_action( 'woocommerce_update_options_integration_' .  $this->id, array( $this, 'process_admin_options' ) );
@@ -46,6 +46,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_filter( 'wc_csr_stock_pending_text', array( $this, 'replace_stock_pending_text' ), 10, 3 );
 			add_filter( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
 			add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
+			add_filter( 'woocommerce_get_undo_url', array( $this, 'get_undo_url' ), 10, 2 );
 		}
 
 		// Actions/Filters related to cart item expiration
@@ -63,16 +64,29 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 
 		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
-
+		
 		/* Code to use the translation of jquery.countdown.js */
 		$lang = get_locale();
 		switch($lang){
 			case "es_ES":
 				wp_register_script( 'wc-csr-jquery-countdown-es', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-es.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
 				break;
+			case "fr_FR":
+				wp_register_script( 'wc-csr-jquery-countdown-fr', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-fr.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+				break;
+			case "de_DE":
+				wp_register_script( 'wc-csr-jquery-countdown-de', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-de.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+				break;
+			case "it_IT":
+				wp_register_script( 'wc-csr-jquery-countdown-it', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-it.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+				break;
+			case "pt_BR":	
+			case "pt_PT":
+				wp_register_script( 'wc-csr-jquery-countdown-pt', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-pt-BR.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+				break;					
 			/* Here you can add other languages */
-
 		}
+
 		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
 		add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
 		
@@ -327,6 +341,35 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	/**
+	 * Called by 'woocommerce_get_undo_url' filter to change URL if item is managed
+	 *
+	 * @param string $url Default Undo URL
+	 * @param null|string $cart_item_key Item key from users cart
+	 *
+	 * @return string URL for Undo link
+	 */
+	public function get_undo_url( $url, $cart_item_key = null ) {
+		if ( null === $cart_item_key ) {
+			$args = wp_parse_args( parse_url( $url, PHP_URL_QUERY ) );
+			if ( isset( $args, $args[ 'undo_item' ] ) ) {
+				$cart_item_key = $args[ 'undo_item' ];
+			}
+		}
+
+		$cart = WC()->cart;
+		if ( isset( $cart_item_key, $cart, $cart->removed_cart_contents[ $cart_item_key ] ) ) {
+			$cart_item = $cart->removed_cart_contents[ $cart_item_key ];
+			if ( false !== $this->item_managing_stock( $cart_item[ 'product_id' ], $cart_item[ 'variation_id' ] ) ) {
+				// Only replace the URL if the item has managed stock
+				$product = wc_get_product( empty( $cart_item[ 'variation_id' ] ) ? $cart_item[ 'product_id' ] : $cart_item[ 'product_id' ] );
+				$url = $product->get_permalink();
+			}
+		}
+
+		return $url;
+	}
+
+	/**
 	 * Include a countdown timer
 	 *
 	 * @param int $time Time the countdown expires.  Seconds since the epoch
@@ -341,9 +384,22 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				$lang = get_locale();
 				switch($lang){
 					case "es_ES":
-						wp_enqueue_script('wc-csr-jquery-countdown-es');
+						wp_enqueue_script( 'wc-csr-jquery-countdown-es');
 						break;
-					/* Here you can add new languages */	
+					case "fr_FR":
+						wp_enqueue_script( 'wc-csr-jquery-countdown-fr');
+						break;
+					case "de_DE":
+						wp_enqueue_script( 'wc-csr-jquery-countdown-de');
+						break;
+					case "it_IT":
+						wp_enqueue_script( 'wc-csr-jquery-countdown-it');
+						break;
+					case "pt_BR":	
+					case "pt_PT":
+						wp_enqueue_script( 'wc-csr-jquery-countdown-pt');
+						break;						
+					/* Here you can add other languages */
 				}
 				$this->countdown_seconds[ $class ] = $time - time();
 			}
@@ -732,7 +788,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$expired = false;
 		if ( null !== $order_awaiting_payment && ( $order = new WC_Order( $order_awaiting_payment ) ) ) {
 			// If a session is marked with an Order ID in 'order_awaiting_payment' check the status to decide if we should skip the expiration check
-			if ( in_array( $order->post_status, apply_filters( 'wc_csr_expire_ignore_status', array(), $order->post_status, $expire_time, $order_awaiting_payment ) ) ) {
+			if ( in_array( $order->post_status, apply_filters( 'wc_csr_expire_ignore_status', $this->ignore_status, $order->post_status, $expire_time, $order_awaiting_payment ) ) ) {
 				return false;
 			}
 		}
@@ -842,6 +898,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 											  'addonly' => __( 'Only when items are added', 'woocommerce-cart-stock-reducer' ),
 											  'never' => __( 'Never', 'woocommerce-cart-stock-reducer' ) ),
 				'description'       => __( 'When to display a countdown to expiration', 'woocommerce-cart-stock-reducer' ),
+			),
+			'ignore_status' => array(
+				'title'             => __( 'Ignore Order Status', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'multiselect',
+				'default'           => array(),
+				'options'           => wc_get_order_statuses(),
+				'description'       => __( '(Advanced Setting) WooCommerce order status that prohibit expiring items from cart', 'woocommerce-cart-stock-reducer' ),
 			),
 		);
 	}
