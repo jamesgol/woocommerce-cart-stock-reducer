@@ -70,6 +70,7 @@ following pages:" at the page cache and database cache settings.
 = Dev =
 * Add configuration option to set WooCommerce order status to ignore expiration on
 * Change Undo URL on items that are managed so the user is redirected to product page instead of adding back to cart
+* Fix issue with multiple plugins registering WooCommerce integrations
 
 = 1.55 =
 * Move cart expiration check so it does not happen on every page load

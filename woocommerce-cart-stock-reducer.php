@@ -28,7 +28,7 @@ Tested up to: 4.5.1
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-function make_cart_stock_reducer_go_now() {
+function make_cart_stock_reducer_go_now( $integrations = array() ) {
 	if ( class_exists( 'WC_Integration' ) ) {
 		// Three... Two... One... MAKE ROCKET GO NOW!
 		require_once plugin_dir_path( __FILE__ ) . 'includes/class-woocommerce-cart-stock-reducer.php';
