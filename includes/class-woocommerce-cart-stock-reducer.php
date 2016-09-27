@@ -12,6 +12,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	private $item_expire_message = null;
 	private $countdown_seconds   = array();
 	private $expiration_notice_added = false;
+	private $lang = null;
 
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
@@ -63,6 +64,29 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 
 		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+		
+		/* Code to use the translation of jquery.countdown.js */
+		$lang = get_locale();
+		switch($lang){
+			case "es_ES":
+				wp_register_script( 'wc-csr-jquery-countdown-es', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-es.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+				break;
+			case "fr_FR":
+				wp_register_script( 'wc-csr-jquery-countdown-fr', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-fr.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+				break;
+			case "de_DE":
+				wp_register_script( 'wc-csr-jquery-countdown-de', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-de.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+				break;
+			case "it_IT":
+				wp_register_script( 'wc-csr-jquery-countdown-it', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-it.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+				break;
+			case "pt_BR":	
+			case "pt_PT":
+				wp_register_script( 'wc-csr-jquery-countdown-pt', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown-pt-BR.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+				break;					
+			/* Here you can add other languages */
+		}
+
 		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
 		add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
 		
@@ -356,6 +380,27 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				// Only run this once per execution, in case we need to add more later
 				add_action('wp_footer', array($this, 'countdown_footer'), 25);
 				wp_enqueue_script('wc-csr-jquery-countdown');
+				/* Code to use the translation of jquery.countdown.js */
+				$lang = get_locale();
+				switch($lang){
+					case "es_ES":
+						wp_enqueue_script( 'wc-csr-jquery-countdown-es');
+						break;
+					case "fr_FR":
+						wp_enqueue_script( 'wc-csr-jquery-countdown-fr');
+						break;
+					case "de_DE":
+						wp_enqueue_script( 'wc-csr-jquery-countdown-de');
+						break;
+					case "it_IT":
+						wp_enqueue_script( 'wc-csr-jquery-countdown-it');
+						break;
+					case "pt_BR":	
+					case "pt_PT":
+						wp_enqueue_script( 'wc-csr-jquery-countdown-pt');
+						break;						
+					/* Here you can add other languages */
+				}
 				$this->countdown_seconds[ $class ] = $time - time();
 			}
 		}
