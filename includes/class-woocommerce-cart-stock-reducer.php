@@ -459,9 +459,18 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return bool true if addition to cart is valid
 	 */
 	public function add_cart_validation( $valid, $product_id, $quantity, $variation_id = null, $variations = array() ) {
-		if ( $this->item_managing_stock( $product_id, $variation_id ) ) {
+		if ( $item = $this->item_managing_stock( $product_id, $variation_id ) ) {
 			$available = $this->get_stock_available( $product_id, $variation_id );
-			if ( $available < $quantity ) {
+			$product = wc_get_product( $item );
+			$backorders_allowed = $product->backorders_allowed();
+			$stock = $product->get_total_stock();
+			if ( true === $backorders_allowed ) {
+				if ( $available < $quantity && $stock > 0 ) {
+					$backorder_text = apply_filters( 'wc_csr_item_backorder_text', __( 'Item can not be backordered while there are pending orders', 'woocommerce-cart-stock-reducer' ), $product, $available, $stock );
+					wc_add_notice( $backorder_text, 'error' );
+					$valid = false;
+				}
+			} elseif ( $available < $quantity ) {
 				wc_add_notice( __( 'Item is no longer available', 'woocommerce-cart-stock-reducer' ), 'error' );
 				$valid = false;
 			}
@@ -539,17 +548,17 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 						break;
 				}
 			} else {
-				if ( ! empty( $this->stock_pending ) ) {
-					// Override text via configurable option
-					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_pending_text', $this->stock_pending, $info, $product );
-					$info[ 'class' ]        = 'out-of-stock';
-				} elseif ( $product->backorders_allowed() && $product->backorders_require_notification() ) {
-					$info[ 'availability' ] = __( 'Available on backorder', 'woocommerce' );
+				if ( $product->backorders_allowed() && $product->backorders_require_notification() ) {
+					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_backorder_notify_text', __( 'Available on backorder', 'woocommerce' ), $info, $product );
 					$info[ 'class' ]        = 'available-on-backorder';
 				} elseif ( $product->backorders_allowed() ) {
-					$info[ 'availability' ] = __( 'In stock', 'woocommerce' );
+					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_backorder_text', __( 'In stock', 'woocommerce' ), $info, $product );
 					$info[ 'class' ]        = 'in-stock';
-				} else {
+				} elseif ( ! empty( $this->stock_pending ) ) {
+					// Override text via configurable option
+					$info['availability'] = apply_filters( 'wc_csr_stock_pending_text', $this->stock_pending, $info, $product );
+					$info['class']        = 'out-of-stock';
+				} else	{
 					$info[ 'availability' ] = __( 'Out of stock', 'woocommerce' );
 					$info[ 'class' ]        = 'out-of-stock';
 				}
