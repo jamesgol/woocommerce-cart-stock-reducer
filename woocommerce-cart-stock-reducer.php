@@ -7,6 +7,8 @@ Author: James Golovich
 License: GPL2
 Requires at least: 4.0
 Tested up to: 4.5.1
+Text Domain: woocommerce-cart-stock-reducer
+Domain Path: /languages/
 */
 
 /*  Copyright 2014  James Golovich  (email : james@gnuinter.net)
