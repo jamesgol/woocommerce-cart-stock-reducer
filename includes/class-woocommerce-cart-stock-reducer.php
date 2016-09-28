@@ -18,6 +18,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->method_title       = __( 'Cart Stock Reducer', 'woocommerce-cart-stock-reducer' );
 		$this->method_description = __( 'Allow WooCommerce inventory stock to be reduced when adding items to cart', 'woocommerce-cart-stock-reducer' );
 		$this->plugins_url        = plugins_url( '/', dirname( __FILE__ ) );
+		$this->plugin_dir         = realpath( dirname( __FILE__ ) . '/..' );
+		$this->language           = null;
 		// Load the settings.
 		$this->init_form_fields();
 		$this->init_settings();
@@ -73,6 +75,33 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function load_plugin_textdomain() {
 		load_plugin_textdomain( 'woocommerce-cart-stock-reducer', false, plugin_basename( dirname( __FILE__ ) ) . '/../languages/' );
+		$this->language = $this->find_countdown_language( apply_filters( 'wc_csr_countdown_locale', get_locale() ) );
+		if ( $this->language ) {
+			wp_register_script( 'wc-csr-jquery-countdown-locale', $this->plugins_url . "assets/js/jquery-countdown/jquery.countdown-{$this->language}.js", array( 'jquery',	'wc-csr-jquery-plugin',	'wc-csr-jquery-countdown' ), '2.0.2', true );
+		}
+
+	}
+
+	/**
+	 * Search the countdown files for the closest localization match
+	 *
+	 * @param string $lang name to search
+	 *
+	 * @return null|string language name to use for countdown
+	 */
+	public function find_countdown_language( $lang = null ) {
+		if ( !empty( $lang ) ) {
+			$file = $this->plugin_dir . '/assets/js/jquery-countdown/jquery.countdown-' . $lang . '.js';
+			if ( file_exists( $file ) ) {
+				return $lang;
+			} elseif ( $part = substr( $lang, 0, strpos( $lang, '-' ) ) ) {
+				$file = $this->plugin_dir . '/assets/js/jquery-countdown/jquery.countdown-' . $part . '.js';
+				if ( file_exists( $file ) ) {
+					return $part;
+				}
+			}
+		}
+		return null;
 	}
 
 	 /**
@@ -356,6 +385,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				// Only run this once per execution, in case we need to add more later
 				add_action('wp_footer', array($this, 'countdown_footer'), 25);
 				wp_enqueue_script('wc-csr-jquery-countdown');
+				if ( $this->language ) {
+					wp_enqueue_script( 'wc-csr-jquery-countdown-locale' );
+				}
 				$this->countdown_seconds[ $class ] = $time - time();
 			}
 		}
