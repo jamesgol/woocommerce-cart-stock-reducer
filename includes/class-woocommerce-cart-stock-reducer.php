@@ -861,16 +861,16 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			'stock_pending_expire_time' => array(
 				'title'             => __( 'Append Expiration Time to Pending Order Text', 'woocommerce-cart-stock-reducer' ),
 				'type'              => 'text',
-				'description'       => __( 'Enter text to be appended when there are items in stock but held in an existing cart. %CSR_EXPIRE_TIME% will be replaced with a countdown to when items might be available.', 'woocommerce-cart-stock-reducer' ),
+				'description'       => sprintf( __( 'Enter text to be appended when there are items in stock but held in an existing cart. %s will be replaced with a countdown to when items might be available.', 'woocommerce-cart-stock-reducer' ), '%CSR_EXPIRE_TIME%' ),
 				'desc_tip'          => false,
-				'default'           => __( 'Check back in %CSR_EXPIRE_TIME% to see if items become available.', 'woocommerce-cart-stock-reducer' ),
+				'default'           => sprintf( __( 'Check back in %s to see if items become available.', 'woocommerce-cart-stock-reducer' ), '%CSR_EXPIRE_TIME%' ),
 			),
 			'stock_pending_include_cart_items' => array(
 				'title'             => __( 'Append Included Items to Pending Order Text', 'woocommerce-cart-stock-reducer' ),
 				'type'              => 'text',
-				'description'       => __( 'Enter text to be appended when the there are pending items in the users cart. %CSR_NUM_ITEMS% will be replaced with the number of items in cart.', 'woocommerce-cart-stock-reducer' ),
+				'description'       => sprintf( __( 'Enter text to be appended when the there are pending items in the users cart. %s will be replaced with the number of items in cart.', 'woocommerce-cart-stock-reducer' ), '%CSR_NUM_ITEMS%' ),
 				'desc_tip'          => false,
-				'default'           => __( 'Pending orders include %CSR_NUM_ITEMS% items already added to your cart.', 'woocommerce-cart-stock-reducer' ),
+				'default'           => sprintf( __( 'Pending orders include %s items already added to your cart.', 'woocommerce-cart-stock-reducer' ), '%CSR_NUM_ITEMS%' ),
 			),
 			'expire_items' => array(
 				'title'             => __( 'Expire Items', 'woocommerce-cart-stock-reducer' ),
