@@ -1,0 +1,223 @@
+# Copyright (C) 2016 WooCommerce Cart Stock Reducer
+# This file is distributed under the same license as the WooCommerce Cart Stock Reducer package.
+msgid ""
+msgstr ""
+"Project-Id-Version: WooCommerce Cart Stock Reducer 1.55\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woocommerce-cart-"
+"stock-reducer\n"
+"POT-Creation-Date: 2016-09-28 08:09:40+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2016-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: includes/class-woocommerce-cart-stock-reducer.php:18
+#: includes/class-woocommerce-cart-stock-reducer.php:854
+msgid "Cart Stock Reducer"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:19
+msgid ""
+"Allow WooCommerce inventory stock to be reduced when adding items to cart"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:116
+msgid "Settings"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:211
+msgid "Please checkout within %s to guarantee your item does not expire."
+msgid_plural "Please checkout within %s to guarantee your items do not expire."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:282
+msgid ""
+"Sorry, '%s' was removed from your cart because you didn't checkout before "
+"the expiration time."
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:311
+msgid "Please checkout within %s or this item will be removed from your cart."
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:322
+msgid " There is %d item expiring sooner."
+msgid_plural " There are %d items expiring sooner."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:485
+msgid "Quantity requested not available"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:509
+msgid "Item can not be backordered while there are pending orders"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:514
+msgid "Item is no longer available"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:568
+#: includes/class-woocommerce-cart-stock-reducer.php:579
+#: includes/class-woocommerce-cart-stock-reducer.php:595
+msgid "In stock"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:573
+msgid "Only %s left in stock"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:576
+#: includes/class-woocommerce-cart-stock-reducer.php:586
+msgid "(can be backordered)"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:584
+msgid "%s in stock"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:592
+msgid "Available on backorder"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:602
+msgid "Out of stock"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:824
+msgid "Invalid Expire Time: %s"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:826
+msgid "Cannot set Expire Time that would be in the past: %s"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:829
+msgid "Expire time must be set if expiration is enabled"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:856
+msgid "Enable Cart Stock Reducer"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:858
+msgid ""
+"If checked, stock quantity will be reduced when items are added to cart."
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:861
+msgid "Pending Order Text"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:863
+msgid ""
+"Enter alternate text to be displayed when there are items in stock but held "
+"in an existing cart."
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:865
+msgid "This item is not available at this time due to pending orders."
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:868
+msgid "Append Expiration Time to Pending Order Text"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:870
+msgid ""
+"Enter text to be appended when there are items in stock but held in an "
+"existing cart. %s will be replaced with a countdown to when items might be "
+"available."
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:872
+msgid "Check back in %s to see if items become available."
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:875
+msgid "Append Included Items to Pending Order Text"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:877
+msgid ""
+"Enter text to be appended when the there are pending items in the users "
+"cart. %s will be replaced with the number of items in cart."
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:879
+msgid "Pending orders include %s items already added to your cart."
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:882
+msgid "Expire Items"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:884
+msgid "Enable Item Expiration"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:886
+msgid ""
+"If checked, items that stock is managed for will expire from carts.  You "
+"MUST set an 'Expire Time' below if you use this option"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:889
+msgid "Expire Time"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:891
+msgid "How long before item expires from cart"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:897
+msgid "Expire Countdown"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:899
+msgid "Enable Expiration Countdown"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:901
+msgid "Always"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:902
+msgid "Only when items are added"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:903
+msgid "Never"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:904
+msgid "When to display a countdown to expiration"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:907
+msgid "Ignore Order Status"
+msgstr ""
+
+#: includes/class-woocommerce-cart-stock-reducer.php:911
+msgid ""
+"(Advanced Setting) WooCommerce order status that prohibit expiring items "
+"from cart"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "WooCommerce Cart Stock Reducer"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"Allow WooCommerce inventory stock to be reduced when adding items to cart "
+"and/or expire items from the cart"
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "James Golovich"
+msgstr ""
