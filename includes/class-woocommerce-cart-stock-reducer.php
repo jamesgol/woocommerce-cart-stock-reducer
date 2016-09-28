@@ -20,6 +20,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->plugins_url        = plugins_url( '/', dirname( __FILE__ ) );
 		$this->plugin_dir         = realpath( dirname( __FILE__ ) . '/..' );
 		$this->language           = null;
+		$this->num_expiring_items = 0;
 		// Load the settings.
 		$this->init_form_fields();
 		$this->init_settings();
@@ -207,8 +208,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 		if ( 0 !== $expire_soonest && !$this->expire_notice_added()  ) {
 			$item_expire_span = '<span id="wc-csr-countdown"></span>';
-			// @todo Adjust this text?  Once it is finalized switch to using _n() to pluralize item/items
-			$expiring_cart_notice = apply_filters( 'wc_csr_expiring_cart_notice', sprintf( __( "Please checkout within %s to guarantee your items don't expire.", 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $expire_soonest );
+			$expire_notice_text = sprintf( _n( 'Please checkout within %s to guarantee your item does not expire.', 'Please checkout within %s to guarantee your items do not expire.', $this->num_expiring_items, 'woocommerce-cart-stock-reducer' ), $item_expire_span );
+			$expiring_cart_notice = apply_filters( 'wc_csr_expiring_cart_notice', $expire_notice_text, $item_expire_span, $expire_soonest, $this->num_expiring_items );
 			wc_add_notice( $expiring_cart_notice, 'notice' );
 
 		} elseif ( 0 === $expire_soonest ) {
@@ -232,6 +233,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function expire_items() {
 		$expire_soonest = 0;
 		$item_expiring_soonest = null;
+		$num_expiring_items = 0;
 		$cart = WC()->cart;
 		if ( null === $cart ) {
 			return;
@@ -247,10 +249,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 					// Keep track of the soonest expiration so we can notify
 					$expire_soonest = $item[ 'csr_expire_time' ];
 					$item_expiring_soonest = $cart_id;
+					$num_expiring_items += $item[ 'quantity' ];
+				} else {
+					$num_expiring_items += $item[ 'quantity' ];
 				}
 			}
 
 		}
+		$this->num_expiring_items = $num_expiring_items;
 		return $expire_soonest;
 
 	}

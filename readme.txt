@@ -73,6 +73,7 @@ following pages:" at the page cache and database cache settings.
 * Fix issue with multiple plugins registering WooCommerce integrations
 * Handle backordered items properly
 * Automatically use local language for countdown if there is a translation available
+* Properly pluralize 'Please checkout' text
 
 = 1.55 =
 * Move cart expiration check so it does not happen on every page load
