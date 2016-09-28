@@ -91,6 +91,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function find_countdown_language( $lang = null ) {
 		if ( !empty( $lang ) ) {
+			// jquery-countdown uses - as separator instead of _
+			$lang = str_replace( '_', '-', $lang );
 			$file = $this->plugin_dir . '/assets/js/jquery-countdown/jquery.countdown-' . $lang . '.js';
 			if ( file_exists( $file ) ) {
 				return $lang;
