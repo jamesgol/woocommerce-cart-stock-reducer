@@ -75,7 +75,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	public function load_plugin_textdomain() {
-		load_plugin_textdomain( 'woocommerce-cart-stock-reducer', false, plugin_basename( dirname( __FILE__ ) ) . '/../languages/' );
+		load_plugin_textdomain( 'woocommerce-cart-stock-reducer', false, plugin_basename( $this->plugin_dir ) . '/languages/' );
 		$this->language = $this->find_countdown_language( apply_filters( 'wc_csr_countdown_locale', get_locale() ) );
 		if ( $this->language ) {
 			wp_register_script( 'wc-csr-jquery-countdown-locale', $this->plugins_url . "assets/js/jquery-countdown/jquery.countdown-{$this->language}.js", array( 'jquery',	'wc-csr-jquery-plugin',	'wc-csr-jquery-countdown' ), '2.0.2', true );
