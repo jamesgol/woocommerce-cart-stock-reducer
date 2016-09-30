@@ -1,12 +1,12 @@
 === WooCommerce Cart Stock Reducer ===
 Contributors: jamesgol
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY
-Tags: woocommerce
+Tags: woocommerce, cart, expire
 Requires at least: 4.0
-Tested up to: 4.5.1
-Stable tag: 1.55
+Tested up to: 4.6.1
+Stable tag: 1.75
 WC requires at least: 2.2
-WC tested up to: 2.6.0-beta-1
+WC tested up to: 2.6.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,7 +67,7 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
-= Dev =
+= 1.75 =
 * Add configuration option to set WooCommerce order status to ignore expiration on
 * Change Undo URL on items that are managed so the user is redirected to product page instead of adding back to cart
 * Fix issue with multiple plugins registering WooCommerce integrations
@@ -134,7 +134,6 @@ following pages:" at the page cache and database cache settings.
 
 == TODO ==
 
-* Make expiration strings nicer
 * Look into adding ajax and mini-cart notices
 * Take some screenshots for wordpress.org
 * Add some kind of indicator to cart so you know what items will expire
