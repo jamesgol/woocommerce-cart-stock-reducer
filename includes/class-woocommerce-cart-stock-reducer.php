@@ -511,7 +511,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 					$valid = false;
 				}
 			} elseif ( $available < $quantity ) {
-				wc_add_notice( __( 'Item is no longer available', 'woocommerce-cart-stock-reducer' ), 'error' );
+				if ( $available > 0 ) {
+					wc_add_notice( sprintf( __( 'Quantity requested (%d) is no longer available, only %d available', 'woocommerce-cart-stock-reducer' ), $quantity, $available ), 'error' );
+				} else {
+					wc_add_notice( __( 'Item is no longer available', 'woocommerce-cart-stock-reducer' ), 'error' );
+				}
 				$valid = false;
 			}
 
