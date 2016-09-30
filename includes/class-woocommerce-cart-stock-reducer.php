@@ -5,13 +5,14 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class WC_Cart_Stock_Reducer extends WC_Integration {
 
-	private $pseudo_stock = array();
 	private $expiration_time_cache = array();
 
 	// Variables used for specific session
 	private $item_expire_message = null;
 	private $countdown_seconds   = array();
 	private $expiration_notice_added = false;
+	private $language = null;
+	private $num_expiring_items = 0;
 
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
@@ -19,8 +20,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->method_description = __( 'Allow WooCommerce inventory stock to be reduced when adding items to cart', 'woocommerce-cart-stock-reducer' );
 		$this->plugins_url        = plugins_url( '/', dirname( __FILE__ ) );
 		$this->plugin_dir         = realpath( dirname( __FILE__ ) . '/..' );
-		$this->language           = null;
-		$this->num_expiring_items = 0;
+
 		// Load the settings.
 		$this->init_form_fields();
 		$this->init_settings();
@@ -49,6 +49,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_filter( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
 			add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
 			add_filter( 'woocommerce_get_undo_url', array( $this, 'get_undo_url' ), 10, 2 );
+			add_filter( 'woocommerce_product_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
+			add_filter( 'woocommerce_variation_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
+			add_filter( 'woocommerce_available_variation', array( $this, 'product_available_variation' ), 10, 3 );
+
 		}
 
 		// Actions/Filters related to cart item expiration
@@ -382,6 +386,40 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return $url;
 	}
 
+
+	function product_is_in_stock( $status, $product = null ) {
+		if ( null === $product ) {
+			global $product;
+		}
+
+		if ( is_a( $product, 'WC_Product' ) && $item = $this->item_managing_stock( $product->id, $product->variation_id ) ) {
+			$available = $this->get_stock_available( $product->id, $product->variation_id, $product );
+			if ( $available <= 0 && !empty( $product->total_stock ) ) {
+				return false;
+			}
+		}
+
+		return $status;
+	}
+
+	/*
+	 *
+	 */
+	function product_available_variation( $var, $product, $variation ) {
+		if ( version_compare( WC_VERSION, '2.7', '<' ) ) {
+			// WooCommerce < 2.7 does not have the 'woocommerce_variation_is_in_stock', so this hack produces similar results
+			if ( true === $var['is_in_stock'] && false !== strpos( $var['availability_html'], 'out-of-stock' ) ) {
+				$var['is_in_stock'] = false;
+			}
+		}
+
+		$max_qty = $this->get_stock_available( $product->id, $variation->variation_id, $variation, false );
+		if ( $max_qty >= 0 ) {
+			$var['max_qty'] = $max_qty;
+		}
+		return $var;
+	}
+
 	/**
 	 * Include a countdown timer
 	 *
@@ -562,10 +600,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function get_avail( $info, $product ) {
 
-		if ( 'in-stock' === $info[ 'class' ] ) {
+		if ( 'out-of-stock' === $info[ 'class' ] || 'in-stock' === $info[ 'class' ] ) {
 			$available = $this->get_stock_available( $product->id, $product->variation_id, $product );
 
-			if ( 0 < $available ) {
+			if ( 'in-stock' === $info[ 'class' ] && $available > 0 ) {
 				// Parts taken from WooCommerce core in order to keep text identical
 				switch ( get_option( 'woocommerce_stock_format' ) ) {
 					case 'no_amount' :
@@ -592,13 +630,19 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 						break;
 				}
 			} else {
-				if ( $product->backorders_allowed() && $product->backorders_require_notification() ) {
+				$item = $this->item_managing_stock( $product->id, $product->variation_id );
+				if ( $product->backorders_allowed() && $product->get_total_stock() > 0 ) {
+					// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
+					// purchases have been completed or expired.  Otherwise the situation is too complicated.
+					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_backorder_pending_text', $this->stock_pending, $info, $product );
+					$info[ 'class' ]        = 'out-of-stock';
+				} elseif ( $product->backorders_allowed() && $product->backorders_require_notification() ) {
 					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_backorder_notify_text', __( 'Available on backorder', 'woocommerce' ), $info, $product );
 					$info[ 'class' ]        = 'available-on-backorder';
 				} elseif ( $product->backorders_allowed() ) {
 					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_backorder_text', __( 'In stock', 'woocommerce' ), $info, $product );
 					$info[ 'class' ]        = 'in-stock';
-				} elseif ( ! empty( $this->stock_pending ) ) {
+				} elseif ( ! empty( $this->stock_pending ) && 'outofstock' !== $product->stock_status ) {
 					// Override text via configurable option
 					$info['availability'] = apply_filters( 'wc_csr_stock_pending_text', $this->stock_pending, $info, $product );
 					$info['class']        = 'out-of-stock';
@@ -676,15 +720,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( null === $product ) {
 			$product = wc_get_product( $id );
 		}
-		if ( isset( $this->pseudo_stock[ $id ] ) ) {
-			$stock = $this->pseudo_stock[ $id ];
-		} else {
-			$stock = $product->get_total_stock();
-			// Cache our retrieved stock value or else we will decrement the "fake" stock count every time this is called
-			$this->pseudo_stock[ $id ] = $stock;
-		}
+		$stock = $product->get_total_stock();
 
-		if ( false !== $id ) {
+		if ( $stock > 0 ) {
 			if ( $id === $variation_id ) {
 				$product_field = 'variation_id';
 			} else {
@@ -703,8 +741,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$in_carts = $this->quantity_in_carts( $id, $product_field, $ignore );
 			if ( 0 < $in_carts ) {
 				$stock = ( $stock - $in_carts );
-				// Trick WooCommerce into thinking there is no stock available, this does NOT get updated in the DB
-				$product->stock = $stock;
 			}
 		}
 		return $stock;
