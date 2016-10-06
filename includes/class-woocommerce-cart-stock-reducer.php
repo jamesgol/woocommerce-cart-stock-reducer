@@ -600,7 +600,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function get_avail( $info, $product ) {
 
-		if ( 'out-of-stock' === $info[ 'class' ] || 'in-stock' === $info[ 'class' ] ) {
+		$item = $this->item_managing_stock( $product->id, $product->variation_id );
+
+		if ( $item && ( 'out-of-stock' === $info[ 'class' ] || 'in-stock' === $info[ 'class' ] ) ) {
 			$available = $this->get_stock_available( $product->id, $product->variation_id, $product );
 
 			if ( 'in-stock' === $info[ 'class' ] && $available > 0 ) {
@@ -630,7 +632,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 						break;
 				}
 			} else {
-				$item = $this->item_managing_stock( $product->id, $product->variation_id );
 				if ( $product->backorders_allowed() && $product->get_total_stock() > 0 ) {
 					// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
 					// purchases have been completed or expired.  Otherwise the situation is too complicated.
