@@ -1,0 +1,10 @@
+<wpml-config>
+    <admin-texts>
+        <key name="woocommerce_woocommerce-cart-stock-reducer_settings">
+            <key name="stock_pending" />
+            <key name="stock_pending_expire_time" />
+            <key name="stock_pending_include_cart_items" />
+        </key>    
+    </admin-texts>   
+</wpml-config>
+
