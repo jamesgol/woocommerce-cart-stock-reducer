@@ -52,7 +52,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_filter( 'woocommerce_product_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
 			add_filter( 'woocommerce_variation_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
 			add_filter( 'woocommerce_available_variation', array( $this, 'product_available_variation' ), 10, 3 );
-
+			add_filter( 'woocommerce_get_stock_quantity', array( $this, 'pre_get_stock_available' ), 10, 2 );
 		}
 
 		// Actions/Filters related to cart item expiration
@@ -721,7 +721,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( null === $product ) {
 			$product = wc_get_product( $id );
 		}
-		$stock = $product->get_total_stock();
+		$stock = get_post_meta( $product_id, '_stock', true );
 
 		if ( $stock > 0 ) {
 			if ( $id === $variation_id ) {
@@ -954,5 +954,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		);
 	}
 
+	public function pre_get_stock_available( $stock, $product ) {
+		return $this->get_stock_available( $product->id );
+	}
 
 }
