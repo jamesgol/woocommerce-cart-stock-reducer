@@ -13,6 +13,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	private $expiration_notice_added = false;
 	private $language = null;
 	private $num_expiring_items = 0;
+	private $checking_virtual_stock = false;
 
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
@@ -41,7 +42,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		// Filters related to stock quantity
 		if ( 'yes' === $this->cart_stock_reducer ) {
-			add_filter( 'woocommerce_get_availability', array( $this, 'get_avail' ), 10, 2 );
 			add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
 			add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
 			add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
@@ -49,8 +49,17 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_filter( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
 			add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
 			add_filter( 'woocommerce_get_undo_url', array( $this, 'get_undo_url' ), 10, 2 );
-			add_filter( 'woocommerce_product_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
-			add_filter( 'woocommerce_variation_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
+			if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+			    // With WooCommerce 3.0 they added a much better way to hook into stock so we can hack it a bit less
+				add_filter( 'woocommerce_get_availability', array( $this, 'get_avail' ), 10, 2 );
+				add_filter( 'woocommerce_product_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
+				add_filter( 'woocommerce_variation_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
+			} else {
+				add_filter( 'woocommerce_product_get_stock_quantity', array( $this, 'product_get_stock_quantity' ), 10, 2 );
+				add_filter( 'woocommerce_product_get_stock_status', array( $this, 'product_get_stock_status' ), 10, 2 );
+				add_filter( 'woocommerce_get_availability_class', array( $this, 'get_availability_class' ), 10, 2 );
+				add_filter( 'woocommerce_get_availability_text', array( $this, 'get_availability_text' ), 10, 2 );
+			}
 			add_filter( 'woocommerce_available_variation', array( $this, 'product_available_variation' ), 10, 3 );
 
 		}
@@ -61,7 +70,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 2 );
 			add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'check_expired_items' ), 10 );
 			add_filter( 'woocommerce_notice_types', array( $this, 'add_countdown_to_notice' ), 10 );
-			add_filter( 'wc_add_to_cart_message', array( $this, 'add_to_cart_message' ), 10, 2 );
+			if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+				add_filter( 'wc_add_to_cart_message', array( $this, 'add_to_cart_message' ), 10, 2 );
+			} else {
+				add_filter( 'wc_add_to_cart_message_html', array( $this, 'add_to_cart_message' ), 10, 2 );
+			}
 			// Some Third-Party themes do not call 'woocommerce_before_main_content' action so let's call it on other likely actions
 			add_action( 'woocommerce_before_single_product', array( $this, 'check_cart_items' ), 9 );
 			add_action( 'woocommerce_check_cart_items', array( $this, 'check_cart_items' ), 9 );
@@ -69,10 +82,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		}
 
-		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
-		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
+		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
 		add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
-		
+
 		// Direct link to our settings page
 		add_filter( 'plugin_action_links', array( $this, 'action_links' ), 10, 2 );
 
@@ -82,7 +95,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		load_plugin_textdomain( 'woocommerce-cart-stock-reducer', false, plugin_basename( $this->plugin_dir ) . '/languages/' );
 		$this->language = $this->find_countdown_language( apply_filters( 'wc_csr_countdown_locale', get_locale() ) );
 		if ( $this->language ) {
-			wp_register_script( 'wc-csr-jquery-countdown-locale', $this->plugins_url . "assets/js/jquery-countdown/jquery.countdown-{$this->language}.js", array( 'jquery',	'wc-csr-jquery-plugin',	'wc-csr-jquery-countdown' ), '2.0.2', true );
+			wp_register_script( 'wc-csr-jquery-countdown-locale', $this->plugins_url . "assets/js/jquery-countdown/js/jquery.countdown-{$this->language}.js", array( 'jquery',	'wc-csr-jquery-plugin',	'wc-csr-jquery-countdown' ), '2.0.2', true );
 		}
 
 	}
@@ -98,11 +111,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( !empty( $lang ) ) {
 			// jquery-countdown uses - as separator instead of _
 			$lang = str_replace( '_', '-', $lang );
-			$file = $this->plugin_dir . '/assets/js/jquery-countdown/jquery.countdown-' . $lang . '.js';
+			$file = $this->plugin_dir . '/assets/js/jquery-countdown/js/jquery.countdown-' . $lang . '.js';
 			if ( file_exists( $file ) ) {
 				return $lang;
 			} elseif ( $part = substr( $lang, 0, strpos( $lang, '-' ) ) ) {
-				$file = $this->plugin_dir . '/assets/js/jquery-countdown/jquery.countdown-' . $part . '.js';
+				$file = $this->plugin_dir . '/assets/js/jquery-countdown/js/jquery.countdown-' . $part . '.js';
 				if ( file_exists( $file ) ) {
 					return $part;
 				}
@@ -123,8 +136,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 		return $links;
 	}
-	
-	
+
+
 
 	/**
 	 * Called from hook 'woocommerce_add_to_cart_redirect', odd choice but it gets called after a succesful save of an item
@@ -150,7 +163,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			// Ignore users quantity when looking at pages like the shopping cart
 			$ignore = true;
 		}
-		$args[ 'max_value' ] = $this->get_stock_available( $product->id, $product->variation_id, $product, $ignore );
+		$args[ 'max_value' ] = $this->get_virtual_stock_available( $product, $ignore );
 
 		return $args;
 	}
@@ -278,9 +291,16 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
 			if ( isset( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
 				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'variation_id' ] );
-				if ( method_exists( $product, 'get_formatted_variation_attributes' ) ) {
-					$item_description .= ' (' . $product->get_formatted_variation_attributes( true ) . ')';
-				}
+				if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+					if ( method_exists( $product, 'get_formatted_variation_attributes' ) ) {
+						$item_description .= ' (' . $product->get_formatted_variation_attributes( true ) . ')';
+					}
+				} else {
+					if ( method_exists( $product, 'wc_get_formatted_variation' ) ) {
+						$item_description .= ' (' . $product->wc_get_formatted_variation( true ) . ')';
+					}
+
+                }
 			}
 
 			$expired_cart_notice = apply_filters( 'wc_csr_expired_cart_notice', sprintf( __( "Sorry, '%s' was removed from your cart because you didn't checkout before the expiration time.", 'woocommerce-cart-stock-reducer' ), $item_description ), $cart_id, $cart );
@@ -376,7 +396,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$cart = WC()->cart;
 		if ( isset( $cart_item_key, $cart, $cart->removed_cart_contents[ $cart_item_key ] ) ) {
 			$cart_item = $cart->removed_cart_contents[ $cart_item_key ];
-			if ( false !== $this->item_managing_stock( $cart_item[ 'product_id' ], $cart_item[ 'variation_id' ] ) ) {
+			if ( false !== $this->get_item_managing_stock( null, $cart_item[ 'product_id' ], $cart_item[ 'variation_id' ] ) ) {
 				// Only replace the URL if the item has managed stock
 				$product = wc_get_product( empty( $cart_item[ 'variation_id' ] ) ? $cart_item[ 'product_id' ] : $cart_item[ 'product_id' ] );
 				$url = $product->get_permalink();
@@ -392,8 +412,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			global $product;
 		}
 
-		if ( is_a( $product, 'WC_Product' ) && $item = $this->item_managing_stock( $product->id, $product->variation_id ) ) {
-			$available = $this->get_stock_available( $product->id, $product->variation_id, $product );
+		if ( is_a( $product, 'WC_Product' ) && $item = $this->get_item_managing_stock( $product ) ) {
+			$available = $this->get_virtual_stock_available( $product );
 			if ( $available <= 0 && !empty( $product->total_stock ) ) {
 				return false;
 			}
@@ -412,8 +432,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				$var['is_in_stock'] = false;
 			}
 		}
+		$field = $this->get_field_managing_stock( $variation );
+		if ( 'product_id' === $field ) {
+		    // Stock is managed by main item ID
+			$max_qty = $this->get_virtual_stock_available( $product, false );
+		} else {
+			$max_qty = $this->get_virtual_stock_available( $variation, false );
+        }
 
-		$max_qty = $this->get_stock_available( $product->id, $variation->variation_id, $variation, false );
 		if ( $max_qty >= 0 ) {
 			$var['max_qty'] = $max_qty;
 		}
@@ -468,7 +494,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function add_cart_item( $item, $key ) {
 		if ( isset( $item[ 'data' ] ) ) {
 			$product = $item[ 'data' ];
-			if ( 'yes' === $this->expire_items && $this->item_managing_stock( $item['product_id'], $item['variation_id'] ) ) {
+			if ( 'yes' === $this->expire_items && $this->get_item_managing_stock( $product ) ) {
 				$expire_time_text = null;
 				if ( ! empty( $this->expire_time ) ) {
 					// Check global expiration time
@@ -518,7 +544,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return bool true if quantity change to cart is valid
 	 */
 	public function update_cart_validation( $valid, $cart_item_key, $values, $quantity ) {
-		$available = $this->get_stock_available( $values[ 'product_id' ], $values[ 'variation_id' ], $values[ 'data' ], true );
+        $product = $values['data'];
+		$available = $this->get_virtual_stock_available( $product, true );
 		if ( is_numeric( $available ) && $available < $quantity ) {
 			wc_add_notice( __( 'Quantity requested not available', 'woocommerce-cart-stock-reducer' ), 'error' );
 			$valid = false;
@@ -537,11 +564,15 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return bool true if addition to cart is valid
 	 */
 	public function add_cart_validation( $valid, $product_id, $quantity, $variation_id = null, $variations = array() ) {
-		if ( $item = $this->item_managing_stock( $product_id, $variation_id ) ) {
-			$available = $this->get_stock_available( $product_id, $variation_id );
+		if ( $item = $this->get_item_managing_stock( null, $product_id, $variation_id ) ) {
 			$product = wc_get_product( $item );
+			$available = $this->get_virtual_stock_available( $product );
 			$backorders_allowed = $product->backorders_allowed();
-			$stock = $product->get_total_stock();
+			if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+				$stock = $product->get_total_stock();
+			} else {
+			    $stock = $product->get_stock_quantity();
+            }
 			if ( true === $backorders_allowed ) {
 				if ( $available < $quantity && $stock > 0 ) {
 					$backorder_text = apply_filters( 'wc_csr_item_backorder_text', __( 'Item can not be backordered while there are pending orders', 'woocommerce-cart-stock-reducer' ), $product, $available, $stock );
@@ -565,6 +596,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * Determine which item is in control of managing the inventory
 	 * @param int $product_id
 	 * @param int $variation_id
+     *
+     * @deprecated 3.0
 	 *
 	 * @return bool|int
 	 */
@@ -591,6 +624,146 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	/**
+	 * Determine which item is in control of managing the inventory
+     * @param object $product
+	 * @param int $product_id
+	 * @param int $variation_id
+	 *
+	 * @return bool|int
+	 */
+	public function get_item_managing_stock( $product = null, $product_id = null, $variation_id = null ) {
+		$id = false;
+
+		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+			if ( null !== $product ) {
+				$managing_stock = $product->managing_stock();
+				if ( ! empty( $product->variation_id ) ) {
+					if ( true === $managing_stock ) {
+						$id = $product->get_variation_id();
+					} elseif ( 'parent' === $managing_stock ) {
+						$id = $product->id;
+					}
+				} elseif ( true === $managing_stock ) {
+					$id = $product->get_id();
+				}
+
+			} elseif ( ! empty( $variation_id ) ) {
+				// First check variation
+				$product        = wc_get_product( $variation_id );
+				$managing_stock = $product->managing_stock();
+				if ( true === $managing_stock ) {
+					$id = $variation_id;
+				} elseif ( 'parent' === $managing_stock ) {
+					$id = $product_id;
+				}
+			} else {
+				$product = wc_get_product( $product_id );
+				if ( true === $product->managing_stock() ) {
+					$id = $product_id;
+				}
+			}
+		} else {
+			// WooCommerce 3.0 changed products over to CRUD, so we need to treat it differently
+			if ( null !== $product ) {
+				$managing_stock = $product->managing_stock();
+				if ( 'parent' === $managing_stock ) {
+					$id = $product->get_parent_id();
+				} elseif ( true === $managing_stock ) {
+					$id = $product->get_id();
+				}
+			} elseif ( ! empty( $variation_id ) ) {
+				// First check variation
+				$product        = wc_get_product( $variation_id );
+				$managing_stock = $product->managing_stock();
+				if ( 'parent' === $managing_stock ) {
+					$id = $product->get_parent_id();
+				} elseif ( true === $managing_stock ) {
+					$id = $product->get_id();
+				}
+			} else {
+				$product = wc_get_product( $product_id );
+				if ( true === $product->managing_stock() ) {
+					$id = $product->get_id();
+				}
+			}
+
+		}
+
+		return $id;
+	}
+
+	/**
+	 * Determine which field in DB to use for checking stock
+	 * @param object $product
+	 * @return string
+	 */
+	public function get_field_managing_stock( $product = null ) {
+		$id = $this->get_item_managing_stock( $product );
+
+		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+			if ( $id === $product->id ) {
+				$product_field = 'product_id';
+			} else {
+				$product_field = 'variation_id';
+			}
+		} else {
+			// @TODO verify this works on all variations
+			$parent = $product->get_parent_id();
+			if ( empty( $parent ) ) {
+				$product_field = 'product_id';
+			} else {
+				if ( $id === $parent ) {
+					$product_field = 'product_id';
+				} else {
+					$product_field = 'variation_id';
+				}
+			}
+        	}
+
+		return $product_field;
+	}
+
+	public function get_availability_text( $text, $product ) {
+		$stock = $this->get_virtual_stock_available( $product );
+		if ( null !== $stock ) {
+			if ( $product->backorders_allowed() && $stock > 0 ) {
+				// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
+				// purchases have been completed or expired.  Otherwise the situation is too complicated.
+				$text = apply_filters( 'wc_csr_stock_backorder_pending_text', $this->stock_pending, array(), $product );
+			} elseif ( $product->backorders_allowed() && $product->backorders_require_notification() ) {
+				$text = apply_filters( 'wc_csr_stock_backorder_notify_text', __( 'Available on backorder', 'woocommerce' ), array(), $product );
+			} elseif ( $product->backorders_allowed() ) {
+				$text = apply_filters( 'wc_csr_stock_backorder_text', __( 'In stock', 'woocommerce' ), array(), $product );
+			} elseif ( ! empty( $this->stock_pending ) && $stock < 1 ) {
+				// Override text via configurable option
+				$text = apply_filters( 'wc_csr_stock_pending_text', $this->stock_pending, $text, $product );
+			}
+		}
+
+		return $text;
+	}
+
+	public function get_availability_class( $class, $product ) {
+		$stock = $this->get_virtual_stock_available( $product );
+
+		if ( null !== $stock ) {
+			if ( $product->backorders_allowed() && $stock > 0 ) {
+				// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
+				// purchases have been completed or expired.  Otherwise the situation is too complicated.
+				$class = 'out-of-stock';
+			} elseif ( $product->backorders_allowed() && $product->backorders_require_notification() ) {
+				$class = 'available-on-backorder';
+			} elseif ( $product->backorders_allowed() ) {
+				$class = 'in-stock';
+			} elseif ( ! empty( $this->stock_pending ) && $stock < 1 ) {
+				$class = 'out-of-stock';
+			}
+		}
+
+		return $class;
+	}
+
+	/**
 	 * Return the quantity back to get_availability()
 	 *
 	 * @param array $info
@@ -600,10 +773,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function get_avail( $info, $product ) {
 
-		$item = $this->item_managing_stock( $product->id, $product->variation_id );
+		$item = $this->get_item_managing_stock( $product );
 
 		if ( $item && ( 'out-of-stock' === $info[ 'class' ] || 'in-stock' === $info[ 'class' ] ) ) {
-			$available = $this->get_stock_available( $product->id, $product->variation_id, $product );
+			$available = $this->get_virtual_stock_available( $product );
 
 			if ( 'in-stock' === $info[ 'class' ] && $available > 0 ) {
 				// Parts taken from WooCommerce core in order to keep text identical
@@ -632,7 +805,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 						break;
 				}
 			} else {
-				if ( $product->backorders_allowed() && $product->get_total_stock() > 0 ) {
+				if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+					$stock = $product->get_total_stock();
+					$stock_status = $product->stock_status;
+				} else {
+					$stock = $product->get_stock_quantity();
+					$stock_status = $product->get_stock_status();
+				}
+				if ( $product->backorders_allowed() && $stock > 0 ) {
 					// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
 					// purchases have been completed or expired.  Otherwise the situation is too complicated.
 					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_backorder_pending_text', $this->stock_pending, $info, $product );
@@ -643,7 +823,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				} elseif ( $product->backorders_allowed() ) {
 					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_backorder_text', __( 'In stock', 'woocommerce' ), $info, $product );
 					$info[ 'class' ]        = 'in-stock';
-				} elseif ( ! empty( $this->stock_pending ) && 'outofstock' !== $product->stock_status ) {
+				} elseif ( ! empty( $this->stock_pending ) && 'outofstock' !== $stock_status ) {
 					// Override text via configurable option
 					$info['availability'] = apply_filters( 'wc_csr_stock_pending_text', $this->stock_pending, $info, $product );
 					$info['class']        = 'out-of-stock';
@@ -659,7 +839,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function replace_stock_pending_text( $pending_text, $info = null, $product = null ) {
 
-		if ( null != $product && $item = $this->item_managing_stock( $product->id, $product->variation_id ) ) {
+		if ( null != $product && $item = $this->get_item_managing_stock( $product ) ) {
 			if ( !empty( $this->stock_pending_include_cart_items ) && $this->items_in_cart( $item ) ) {
 				// Only append text if enabled and there are items actually in this users cart
 				$pending_include_cart_items = str_ireplace( '%CSR_NUM_ITEMS%', $this->items_in_cart( $item ), $this->stock_pending_include_cart_items );
@@ -705,13 +885,15 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @param int $item The item ID
 	 * @param object $product WooCommerce WC_Product based class, if not passed the item ID will be used to query
 	 * @param string $ignore Cart Item Key to ignore in the count
+     *
+     * @deprecated 3.0
 	 *
 	 * @return int Quantity of items in stock
 	 */
 	public function get_stock_available( $product_id, $variation_id = null, $product = null, $ignore = false ) {
 		$stock = 0;
 
-		$id = $this->item_managing_stock( $product_id, $variation_id );
+		$id = $this->get_item_managing_stock( $product, $product_id, $variation_id );
 
 		if ( false === $id ) {
 			// Item is not a managed item, do not return quantity
@@ -721,7 +903,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( null === $product ) {
 			$product = wc_get_product( $id );
 		}
-		$stock = $product->get_total_stock();
+		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+			$stock = $product->get_total_stock();
+		} else {
+			$stock = $product->get_stock_quantity();
+		}
 
 		if ( $stock > 0 ) {
 			if ( $id === $variation_id ) {
@@ -745,6 +931,77 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			}
 		}
 		return $stock;
+	}
+
+	/**
+	 * Get the quantity available of a specific item
+	 *
+	 * @param object $product WooCommerce WC_Product based class, if not passed the item ID will be used to query
+	 * @param string $ignore Cart Item Key to ignore in the count
+	 *
+	 * @return int Quantity of items in stock
+	 */
+	public function get_virtual_stock_available( $product = null, $ignore = false ) {
+		$stock = 0;
+
+		$id = $this->get_item_managing_stock( $product );
+
+		if ( false === $id ) {
+			// Item is not a managed item, do not return quantity
+			return null;
+		}
+
+		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+			$stock = $product->get_total_stock();
+		} else {
+			$stock = $product->get_stock_quantity();
+		}
+
+		if ( $stock > 0 ) {
+		    $product_field = $this->get_field_managing_stock( $product );
+
+			// The minimum quantity of stock to have in order to skip checking carts.  This should be higher than the amount you expect could sell before the carts expire.
+			// Originally was a configuration variable, but this is such an advanced option I thought it would be better as a filter.
+			// Plus you can use some math to make this decision
+			$min_no_check = apply_filters( 'wc_csr_min_no_check', false, $id, $stock );
+			if ( false != $min_no_check && $min_no_check < (int) $stock ) {
+				// Don't bother searching through all the carts if there is more than 'min_no_check' quantity
+				return $stock;
+			}
+
+			$in_carts = $this->quantity_in_carts( $id, $product_field, $ignore );
+			if ( 0 < $in_carts ) {
+				$stock = ( $stock - $in_carts );
+			}
+		}
+		return $stock;
+	}
+
+	function product_get_stock_status( $status, $product ) {
+		$virtual_stock = $this->get_virtual_stock_available( $product, false );
+		if ( null !== $virtual_stock && $virtual_stock < 1 ) {
+			if ( ! is_cart() ) {
+				$status = 'outofstock';
+			}
+		}
+		return $status;
+	}
+
+	function product_get_stock_quantity( $quantity, $product ) {
+		if ( false === $this->checking_virtual_stock ) {
+			$this->checking_virtual_stock = true;
+			if ( is_cart() ) {
+				$ignore = true;
+			} else {
+				$ignore = false;
+			}
+			$virtual_stock = $this->get_virtual_stock_available( $product, $ignore );
+			$this->checking_virtual_stock = false;
+			if ( null !== $virtual_stock ) {
+				return $virtual_stock;
+			}
+		}
+		return $quantity;
 	}
 
 	/**
