@@ -69,8 +69,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		}
 
-		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
-		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
+		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
+		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
 		add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
 		
 		// Direct link to our settings page
@@ -82,7 +82,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		load_plugin_textdomain( 'woocommerce-cart-stock-reducer', false, plugin_basename( $this->plugin_dir ) . '/languages/' );
 		$this->language = $this->find_countdown_language( apply_filters( 'wc_csr_countdown_locale', get_locale() ) );
 		if ( $this->language ) {
-			wp_register_script( 'wc-csr-jquery-countdown-locale', $this->plugins_url . "assets/js/jquery-countdown/jquery.countdown-{$this->language}.js", array( 'jquery',	'wc-csr-jquery-plugin',	'wc-csr-jquery-countdown' ), '2.0.2', true );
+			wp_register_script( 'wc-csr-jquery-countdown-locale', $this->plugins_url . "assets/js/jquery-countdown/js/jquery.countdown-{$this->language}.js", array( 'jquery',	'wc-csr-jquery-plugin',	'wc-csr-jquery-countdown' ), '2.0.2', true );
 		}
 
 	}
@@ -98,11 +98,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( !empty( $lang ) ) {
 			// jquery-countdown uses - as separator instead of _
 			$lang = str_replace( '_', '-', $lang );
-			$file = $this->plugin_dir . '/assets/js/jquery-countdown/jquery.countdown-' . $lang . '.js';
+			$file = $this->plugin_dir . '/assets/js/jquery-countdown/js/jquery.countdown-' . $lang . '.js';
 			if ( file_exists( $file ) ) {
 				return $lang;
 			} elseif ( $part = substr( $lang, 0, strpos( $lang, '-' ) ) ) {
-				$file = $this->plugin_dir . '/assets/js/jquery-countdown/jquery.countdown-' . $part . '.js';
+				$file = $this->plugin_dir . '/assets/js/jquery-countdown/js/jquery.countdown-' . $part . '.js';
 				if ( file_exists( $file ) ) {
 					return $part;
 				}
