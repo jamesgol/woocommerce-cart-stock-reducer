@@ -150,7 +150,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			// Ignore users quantity when looking at pages like the shopping cart
 			$ignore = true;
 		}
-		$args[ 'max_value' ] = $this->get_stock_available( $product->id, $product->variation_id, $product, $ignore );
+		$args[ 'max_value' ] = $this->get_virtual_stock_available( $product, $ignore );
 
 		return $args;
 	}
@@ -393,7 +393,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 
 		if ( is_a( $product, 'WC_Product' ) && $item = $this->get_item_managing_stock( $product ) ) {
-			$available = $this->get_stock_available( $product->id, $product->variation_id, $product );
+			$available = $this->get_virtual_stock_available( $product );
 			if ( $available <= 0 && !empty( $product->total_stock ) ) {
 				return false;
 			}
@@ -413,7 +413,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			}
 		}
 
-		$max_qty = $this->get_stock_available( $product->id, $variation->variation_id, $variation, false );
+		$max_qty = $this->get_virtual_stock_available( $variation, false );
 		if ( $max_qty >= 0 ) {
 			$var['max_qty'] = $max_qty;
 		}
@@ -518,7 +518,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return bool true if quantity change to cart is valid
 	 */
 	public function update_cart_validation( $valid, $cart_item_key, $values, $quantity ) {
-		$available = $this->get_stock_available( $values[ 'product_id' ], $values[ 'variation_id' ], $values[ 'data' ], true );
+        $product = $values['data'];
+		$available = $this->get_virtual_stock_available( $product, true );
 		if ( is_numeric( $available ) && $available < $quantity ) {
 			wc_add_notice( __( 'Quantity requested not available', 'woocommerce-cart-stock-reducer' ), 'error' );
 			$valid = false;
@@ -538,8 +539,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function add_cart_validation( $valid, $product_id, $quantity, $variation_id = null, $variations = array() ) {
 		if ( $item = $this->get_item_managing_stock( null, $product_id, $variation_id ) ) {
-			$available = $this->get_stock_available( $product_id, $variation_id );
 			$product = wc_get_product( $item );
+			$available = $this->get_virtual_stock_available( $product );
 			$backorders_allowed = $product->backorders_allowed();
 			$stock = $product->get_total_stock();
 			if ( true === $backorders_allowed ) {
@@ -635,6 +636,23 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	/**
+	 * Determine which field in DB to use for checking stock
+	 * @param object $product
+	 * @return string
+	 */
+	public function get_field_managing_stock( $product = null ) {
+		$id = $this->get_item_managing_stock( $product );
+
+		if ( $id === $product->get_id() ) {
+			$product_field = 'product_id';
+		} else {
+			$product_field = 'variation_id';
+		}
+
+        return $product_field;
+	}
+
+	/**
 	 * Return the quantity back to get_availability()
 	 *
 	 * @param array $info
@@ -647,7 +665,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$item = $this->get_item_managing_stock( $product );
 
 		if ( $item && ( 'out-of-stock' === $info[ 'class' ] || 'in-stock' === $info[ 'class' ] ) ) {
-			$available = $this->get_stock_available( $product->id, $product->variation_id, $product );
+			$available = $this->get_virtual_stock_available( $product );
 
 			if ( 'in-stock' === $info[ 'class' ] && $available > 0 ) {
 				// Parts taken from WooCommerce core in order to keep text identical
@@ -749,6 +767,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @param int $item The item ID
 	 * @param object $product WooCommerce WC_Product based class, if not passed the item ID will be used to query
 	 * @param string $ignore Cart Item Key to ignore in the count
+     *
+     * @deprecated 3.0
 	 *
 	 * @return int Quantity of items in stock
 	 */
@@ -773,6 +793,46 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			} else {
 				$product_field = 'product_id';
 			}
+
+			// The minimum quantity of stock to have in order to skip checking carts.  This should be higher than the amount you expect could sell before the carts expire.
+			// Originally was a configuration variable, but this is such an advanced option I thought it would be better as a filter.
+			// Plus you can use some math to make this decision
+			$min_no_check = apply_filters( 'wc_csr_min_no_check', false, $id, $stock );
+			if ( false != $min_no_check && $min_no_check < (int) $stock ) {
+				// Don't bother searching through all the carts if there is more than 'min_no_check' quantity
+				return $stock;
+			}
+
+			$in_carts = $this->quantity_in_carts( $id, $product_field, $ignore );
+			if ( 0 < $in_carts ) {
+				$stock = ( $stock - $in_carts );
+			}
+		}
+		return $stock;
+	}
+
+	/**
+	 * Get the quantity available of a specific item
+	 *
+	 * @param object $product WooCommerce WC_Product based class, if not passed the item ID will be used to query
+	 * @param string $ignore Cart Item Key to ignore in the count
+	 *
+	 * @return int Quantity of items in stock
+	 */
+	public function get_virtual_stock_available( $product = null, $ignore = false ) {
+		$stock = 0;
+
+		$id = $this->get_item_managing_stock( $product );
+
+		if ( false === $id ) {
+			// Item is not a managed item, do not return quantity
+			return null;
+		}
+
+		$stock = $product->get_total_stock();
+
+		if ( $stock > 0 ) {
+		    $product_field = $this->get_field_managing_stock( $product );
 
 			// The minimum quantity of stock to have in order to skip checking carts.  This should be higher than the amount you expect could sell before the carts expire.
 			// Originally was a configuration variable, but this is such an advanced option I thought it would be better as a filter.
