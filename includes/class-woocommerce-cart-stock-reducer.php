@@ -289,7 +289,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 		if ( 'yes' === $this->expire_items ) {
 			$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
-			if ( isset( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
+			if ( !empty( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
 				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'variation_id' ] );
 				if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
 					if ( method_exists( $product, 'get_formatted_variation_attributes' ) ) {
@@ -300,9 +300,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 						$item_description .= ' (' . $product->wc_get_formatted_variation( true ) . ')';
 					}
 
-                }
+				}
+			} else {
+				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'product_id' ] );
 			}
-
+			// Include link to item removed during notice
+			$item_description = '<a href="' . esc_url( $product->get_permalink() ) . '">' . $item_description . '</a>';
 			$expired_cart_notice = apply_filters( 'wc_csr_expired_cart_notice', sprintf( __( "Sorry, '%s' was removed from your cart because you didn't checkout before the expiration time.", 'woocommerce-cart-stock-reducer' ), $item_description ), $cart_id, $cart );
 			wc_add_notice( $expired_cart_notice, 'error' );
 			do_action( 'wc_csr_before_remove_expired_item', $cart_id, $cart );

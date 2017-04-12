@@ -67,6 +67,11 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
+= Dev =
+* Add support for WooCommerce 3.0
+* Upgrade jquery countdown to version 2.1.0 (http://keith-wood.name/countdown.html)
+* Include item URL link in notice when an item expires from cart
+
 = 1.75 =
 * Add configuration option to set WooCommerce order status to ignore expiration on
 * Change Undo URL on items that are managed so the user is redirected to product page instead of adding back to cart
