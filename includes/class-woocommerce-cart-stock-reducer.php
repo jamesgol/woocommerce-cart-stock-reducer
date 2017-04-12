@@ -278,9 +278,16 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
 			if ( isset( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
 				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'variation_id' ] );
-				if ( method_exists( $product, 'get_formatted_variation_attributes' ) ) {
-					$item_description .= ' (' . $product->get_formatted_variation_attributes( true ) . ')';
-				}
+				if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+					if ( method_exists( $product, 'get_formatted_variation_attributes' ) ) {
+						$item_description .= ' (' . $product->get_formatted_variation_attributes( true ) . ')';
+					}
+				} else {
+					if ( method_exists( $product, 'wc_get_formatted_variation' ) ) {
+						$item_description .= ' (' . $product->wc_get_formatted_variation( true ) . ')';
+					}
+
+                }
 			}
 
 			$expired_cart_notice = apply_filters( 'wc_csr_expired_cart_notice', sprintf( __( "Sorry, '%s' was removed from your cart because you didn't checkout before the expiration time.", 'woocommerce-cart-stock-reducer' ), $item_description ), $cart_id, $cart );
@@ -548,7 +555,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$product = wc_get_product( $item );
 			$available = $this->get_virtual_stock_available( $product );
 			$backorders_allowed = $product->backorders_allowed();
-			$stock = $product->get_total_stock();
+			if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+				$stock = $product->get_total_stock();
+			} else {
+			    $stock = $product->get_stock_quantity();
+            }
 			if ( true === $backorders_allowed ) {
 				if ( $available < $quantity && $stock > 0 ) {
 					$backorder_text = apply_filters( 'wc_csr_item_backorder_text', __( 'Item can not be backordered while there are pending orders', 'woocommerce-cart-stock-reducer' ), $product, $available, $stock );
@@ -610,32 +621,64 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function get_item_managing_stock( $product = null, $product_id = null, $variation_id = null ) {
 		$id = false;
 
-		if ( null !== $product ) {
-		    $managing_stock = $product->managing_stock();
-		    if ( !empty( $product->variation_id ) ) {
-			    if ( true === $managing_stock ) {
-				    $id = $product->get_variation_id();
-			    } elseif ( 'parent' === $managing_stock ) {
-				    $id = $product->id;
-			    }
-            } elseif (true === $managing_stock ) {
-		        $id = $product->get_id();
-            }
+		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+			if ( null !== $product ) {
+				$managing_stock = $product->managing_stock();
+				if ( ! empty( $product->variation_id ) ) {
+					if ( true === $managing_stock ) {
+						$id = $product->get_variation_id();
+					} elseif ( 'parent' === $managing_stock ) {
+						$id = $product->id;
+					}
+				} elseif ( true === $managing_stock ) {
+					$id = $product->get_id();
+				}
 
-		} elseif ( ! empty( $variation_id ) ) {
-			// First check variation
-			$product = wc_get_product( $variation_id );
-			$managing_stock = $product->managing_stock();
-			if ( true === $managing_stock ) {
-				$id = $variation_id;
-			} elseif ( 'parent' === $managing_stock ) {
-				$id = $product_id;
+			} elseif ( ! empty( $variation_id ) ) {
+				// First check variation
+				$product        = wc_get_product( $variation_id );
+				$managing_stock = $product->managing_stock();
+				if ( true === $managing_stock ) {
+					$id = $variation_id;
+				} elseif ( 'parent' === $managing_stock ) {
+					$id = $product_id;
+				}
+			} else {
+				$product = wc_get_product( $product_id );
+				if ( true === $product->managing_stock() ) {
+					$id = $product_id;
+				}
 			}
 		} else {
-			$product = wc_get_product( $product_id );
-			if ( true === $product->managing_stock() ) {
-				$id = $product_id;
+		    // @TODO This sucks on 3.0
+			if ( null !== $product ) {
+				$managing_stock = $product->managing_stock();
+				if ( ! empty( $product->variation_id ) ) {
+					if ( true === $managing_stock ) {
+						$id = $product->get_variation_id();
+					} elseif ( 'parent' === $managing_stock ) {
+						$id = $product->id;
+					}
+				} elseif ( true === $managing_stock ) {
+					$id = $product->get_id();
+				}
+
+			} elseif ( ! empty( $variation_id ) ) {
+				// First check variation
+				$product        = wc_get_product( $variation_id );
+				$managing_stock = $product->managing_stock();
+				if ( true === $managing_stock ) {
+					$id = $variation_id;
+				} elseif ( 'parent' === $managing_stock ) {
+					$id = $product_id;
+				}
+			} else {
+				$product = wc_get_product( $product_id );
+				if ( true === $product->managing_stock() ) {
+					$id = $product_id;
+				}
 			}
+
 		}
 
 		return $id;
@@ -700,7 +743,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 						break;
 				}
 			} else {
-				if ( $product->backorders_allowed() && $product->get_total_stock() > 0 ) {
+				if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+					$stock = $product->get_total_stock();
+				} else {
+					$stock = $product->get_stock_quantity();
+				}
+				if ( $product->backorders_allowed() && $stock > 0 ) {
 					// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
 					// purchases have been completed or expired.  Otherwise the situation is too complicated.
 					$info[ 'availability' ] = apply_filters( 'wc_csr_stock_backorder_pending_text', $this->stock_pending, $info, $product );
@@ -791,7 +839,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( null === $product ) {
 			$product = wc_get_product( $id );
 		}
-		$stock = $product->get_total_stock();
+		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+			$stock = $product->get_total_stock();
+		} else {
+			$stock = $product->get_stock_quantity();
+		}
 
 		if ( $stock > 0 ) {
 			if ( $id === $variation_id ) {
@@ -835,7 +887,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			return null;
 		}
 
-		$stock = $product->get_total_stock();
+		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+			$stock = $product->get_total_stock();
+		} else {
+			$stock = $product->get_stock_quantity();
+		}
 
 		if ( $stock > 0 ) {
 		    $product_field = $this->get_field_managing_stock( $product );
