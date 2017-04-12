@@ -412,8 +412,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				$var['is_in_stock'] = false;
 			}
 		}
+		$field = $this->get_field_managing_stock( $variation );
+		if ( 'product_id' === $field ) {
+		    // Stock is managed by main item ID
+			$max_qty = $this->get_virtual_stock_available( $product, false );
+		} else {
+			$max_qty = $this->get_virtual_stock_available( $variation, false );
+        }
 
-		$max_qty = $this->get_virtual_stock_available( $variation, false );
 		if ( $max_qty >= 0 ) {
 			$var['max_qty'] = $max_qty;
 		}
@@ -610,9 +616,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			    if ( true === $managing_stock ) {
 				    $id = $product->get_variation_id();
 			    } elseif ( 'parent' === $managing_stock ) {
-				    $id = $product->get_id();
+				    $id = $product->id;
 			    }
-            } else {
+            } elseif (true === $managing_stock ) {
 		        $id = $product->get_id();
             }
 
@@ -643,7 +649,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function get_field_managing_stock( $product = null ) {
 		$id = $this->get_item_managing_stock( $product );
 
-		if ( $id === $product->get_id() ) {
+		if ( $id === $product->id ) {
 			$product_field = 'product_id';
 		} else {
 			$product_field = 'variation_id';
