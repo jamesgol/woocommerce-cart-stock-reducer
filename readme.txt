@@ -3,10 +3,10 @@ Contributors: jamesgol
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY
 Tags: woocommerce, cart, expire
 Requires at least: 4.0
-Tested up to: 4.6.1
-Stable tag: 1.75
+Tested up to: 4.7.3
+Stable tag: 2.00
 WC requires at least: 2.2
-WC tested up to: 2.6.4
+WC tested up to: 3.0.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,7 +67,7 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
-= Dev =
+= 2.00 =
 * Add support for WooCommerce 3.0
 * Upgrade jquery countdown to version 2.1.0 (http://keith-wood.name/countdown.html)
 * Include item URL link in notice when an item expires from cart
