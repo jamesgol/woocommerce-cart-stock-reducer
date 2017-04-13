@@ -55,7 +55,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				add_filter( 'woocommerce_product_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
 				add_filter( 'woocommerce_variation_is_in_stock', array( $this, 'product_is_in_stock' ), 10, 2 );
 			} else {
+				add_filter( 'woocommerce_product_variation_get_stock_quantity', array( $this, 'product_get_stock_quantity' ), 10, 2 );
 				add_filter( 'woocommerce_product_get_stock_quantity', array( $this, 'product_get_stock_quantity' ), 10, 2 );
+				add_filter( 'woocommerce_product_variation_get_stock_status', array( $this, 'product_get_stock_status' ), 10, 2 );
 				add_filter( 'woocommerce_product_get_stock_status', array( $this, 'product_get_stock_status' ), 10, 2 );
 				add_filter( 'woocommerce_get_availability_class', array( $this, 'get_availability_class' ), 10, 2 );
 				add_filter( 'woocommerce_get_availability_text', array( $this, 'get_availability_text' ), 10, 2 );
@@ -410,7 +412,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 
-	function product_is_in_stock( $status, $product = null ) {
+	public function product_is_in_stock( $status, $product = null ) {
 		if ( null === $product ) {
 			global $product;
 		}
@@ -428,7 +430,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	/*
 	 *
 	 */
-	function product_available_variation( $var, $product, $variation ) {
+	public function product_available_variation( $var, $product, $variation ) {
 		if ( version_compare( WC_VERSION, '2.7', '<' ) ) {
 			// WooCommerce < 2.7 does not have the 'woocommerce_variation_is_in_stock', so this hack produces similar results
 			if ( true === $var['is_in_stock'] && false !== strpos( $var['availability_html'], 'out-of-stock' ) ) {
@@ -574,7 +576,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
 				$stock = $product->get_total_stock();
 			} else {
-			    $stock = $product->get_stock_quantity();
+			    $stock = $product->get_stock_quantity( 'edit' );
             }
 			if ( true === $backorders_allowed ) {
 				if ( $available < $quantity && $stock > 0 ) {
@@ -957,7 +959,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
 			$stock = $product->get_total_stock();
 		} else {
-			$stock = $product->get_stock_quantity();
+			$stock = $product->get_stock_quantity( 'edit' );
 		}
 
 		if ( $stock > 0 ) {
@@ -980,20 +982,24 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return $stock;
 	}
 
-	function product_get_stock_status( $status, $product ) {
-		$virtual_stock = $this->get_virtual_stock_available( $product, false );
+	public function product_get_stock_status( $status, $product ) {
+		if ( is_cart() || is_checkout() ) {
+			$ignore = true;
+		} else {
+			$ignore = false;
+		}
+		$virtual_stock = $this->get_virtual_stock_available( $product, $ignore );
 		if ( null !== $virtual_stock && $virtual_stock < 1 ) {
-			if ( ! is_cart() ) {
 				$status = 'outofstock';
-			}
 		}
 		return $status;
 	}
 
-	function product_get_stock_quantity( $quantity, $product ) {
+	public function product_get_stock_quantity( $quantity, $product ) {
 		if ( false === $this->checking_virtual_stock ) {
+			// Safety net to stop any potential recursion
 			$this->checking_virtual_stock = true;
-			if ( is_cart() ) {
+			if ( is_cart() || is_checkout() || $this->trace_contains( array( 'has_enough_stock' ) ) ) {
 				$ignore = true;
 			} else {
 				$ignore = false;
@@ -1005,6 +1011,24 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			}
 		}
 		return $quantity;
+	}
+
+
+	/**
+	 * This is an ugly hack to help us deal with the few edge cases where WooCommerce calls get_stock_quantity() but
+	 * we have no way of catching if we should give them real or virtual stock.
+	 * @param array $haystack
+	 *
+	 * @return bool
+	 */
+	protected function trace_contains( $haystack = array() ) {
+		$trace = debug_backtrace();
+		foreach ( $trace as $id => $frame ) {
+			if ( in_array( $frame[ 'function' ], $haystack ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
