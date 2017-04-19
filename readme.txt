@@ -67,6 +67,10 @@ following pages:" at the page cache and database cache settings.
 
 
 == Changelog ==
+= Dev =
+* Fix issue where items that are actually out of stock show pending
+* Make sure we are backwards compatible with WooCommerce < 2.6
+
 = 2.00 =
 * Add support for WooCommerce 3.0
 * Upgrade jquery countdown to version 2.1.0 (http://keith-wood.name/countdown.html)
