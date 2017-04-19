@@ -649,7 +649,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 						$id = $product->id;
 					}
 				} elseif ( true === $managing_stock ) {
-					$id = $product->get_id();
+					if ( version_compare( WC_VERSION, '2.6', '<' ) ) {
+						$id = $product->id;
+					} else {
+						// get_id() was added in WooCommerce 2.6
+						$id = $product->get_id();
+					}
 				}
 
 			} elseif ( ! empty( $variation_id ) ) {
