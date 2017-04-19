@@ -978,6 +978,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			if ( 0 < $in_carts ) {
 				$stock = ( $stock - $in_carts );
 			}
+		} else {
+			// Item is actually not in stock, returning null keeps us from trying to handle the product
+			$stock = null;
 		}
 		return $stock;
 	}
