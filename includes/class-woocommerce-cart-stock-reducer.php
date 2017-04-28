@@ -736,7 +736,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function get_availability_text( $text, $product ) {
 		$stock = $this->get_virtual_stock_available( $product );
 		if ( null !== $stock ) {
-			if ( $product->backorders_allowed() && $stock > 0 ) {
+			if ( $product->backorders_allowed() && $stock < 1 ) {
 				// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
 				// purchases have been completed or expired.  Otherwise the situation is too complicated.
 				$text = apply_filters( 'wc_csr_stock_backorder_pending_text', $this->stock_pending, array(), $product );
