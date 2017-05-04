@@ -65,6 +65,12 @@ We recommend turning off page and database caching for pages affected by this pl
 uses the default Woocommerce "shop" page and W3 Total Cache, add "shop/*" (without the quotes) to "Never cache the 
 following pages:" at the page cache and database cache settings.
 
+= Does this plugin work with Suhosin? =
+
+Yes it does, but the default character length (64) for POST/REQUEST variable names is not sufficient. I suggest following
+the recomendations from WooCommerce and increasing these values. For more information:
+https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-saving-variations-rates-etc/
+
 
 == Changelog ==
 = Dev =
