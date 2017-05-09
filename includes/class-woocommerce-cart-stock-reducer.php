@@ -997,6 +997,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function product_get_stock_quantity( $quantity, $product ) {
 		if ( false === $this->checking_virtual_stock ) {
+			$never_virtual_whitelist = array( 'wc_reduce_stock_levels' );
+			if ( $this->trace_contains( $never_virtual_whitelist ) ) {
+				// For WooCommerce 3.x we need to make sure we return the real quantity to these functions
+				// otherwise they mark items as out of stock
+				return $quantity;
+			}
 			// Safety net to stop any potential recursion
 			$this->checking_virtual_stock = true;
 			if ( is_cart() || is_checkout() || $this->trace_contains( array( 'has_enough_stock' ) ) ) {
