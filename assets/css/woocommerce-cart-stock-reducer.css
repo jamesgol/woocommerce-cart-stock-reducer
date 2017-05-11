@@ -1,0 +1,22 @@
+.wc-csr-info::before
+{
+    font-family: WooCommerce;
+    content: '\e028';
+    display: inline-block;
+    position: absolute;
+    top: 1em;
+    left: 1.5em;
+    color: #1e85be;
+}
+
+.wc-csr-info
+{
+    padding: 1em 2em 1em 3.5em;
+    position: relative;
+    background-color: #f7f6f7;
+    color: #515151;
+    border-top: 3px solid #1e85be;
+    list-style: none;
+    width: auto;
+    word-wrap: break-word;
+}

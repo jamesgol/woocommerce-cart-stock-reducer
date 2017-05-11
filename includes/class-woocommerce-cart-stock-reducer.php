@@ -84,8 +84,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		}
 
+		// @TODO Use minimized version if not debug
 		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.countdown.min.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.0.2', true );
 		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.plugin.min.js', array( 'jquery' ), '2.0.2', true );
+		wp_register_style( 'wc-csr-styles', $this->plugins_url . 'assets/css/woocommerce-cart-stock-reducer.css', array(), '2.10' );
 		add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
 
 		// Direct link to our settings page
@@ -226,11 +228,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			return;
 		}
 		if ( 0 !== $expire_soonest && !$this->expire_notice_added()  ) {
-			$item_expire_span = '<span id="wc-csr-countdown"></span>';
+			$item_expire_span = '<span class="wc-csr-countdown"></span>';
 			$expire_notice_text = sprintf( _n( 'Please checkout within %s to guarantee your item does not expire.', 'Please checkout within %s to guarantee your items do not expire.', $this->num_expiring_items, 'woocommerce-cart-stock-reducer' ), $item_expire_span );
 			$expiring_cart_notice = apply_filters( 'wc_csr_expiring_cart_notice', $expire_notice_text, $item_expire_span, $expire_soonest, $this->num_expiring_items );
-			wc_add_notice( $expiring_cart_notice, 'notice' );
-
+			// With WooCommerce 3.x they remove and re-add notices when cart is updated so we are now manually including our own notice on the cart page
+			echo "<div class='wc-csr-info'>$expiring_cart_notice</div>";
+			$this->countdown( $expire_soonest );
 		} elseif ( 0 === $expire_soonest ) {
 			// Make sure a countdown notice is removed if there is not an item expiring
 			$this->remove_expire_notice();
@@ -335,7 +338,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			foreach ( $cart->cart_contents as $cart_id => $item ) {
 				if ( isset( $item[ 'csr_expire_time' ] ) ) {
 					if ( $cart_item_key === $cart_id && ! $this->expire_notice_added() ) {
-						$item_expire_span = '<span id="wc-csr-countdown"></span>';
+						$item_expire_span = '<span class="wc-csr-countdown"></span>';
 						$this->countdown( $item['csr_expire_time'] );
 						$this->item_expire_message = apply_filters( 'wc_csr_expire_notice', sprintf( __( 'Please checkout within %s or this item will be removed from your cart.', 'woocommerce-cart-stock-reducer' ), $item_expire_span ), $item_expire_span, $item['csr_expire_time'], $item['csr_expire_time_text'] );
 					} else {
@@ -461,7 +464,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			if ( empty( $this->countdown_seconds ) ) {
 				// Only run this once per execution, in case we need to add more later
 				add_action('wp_footer', array($this, 'countdown_footer'), 25);
+				wp_enqueue_style( 'wc-csr-styles' );
 				wp_enqueue_script('wc-csr-jquery-countdown');
+
 				if ( $this->language ) {
 					wp_enqueue_script( 'wc-csr-jquery-countdown-locale' );
 				}
