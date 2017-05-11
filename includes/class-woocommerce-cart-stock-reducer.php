@@ -485,7 +485,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$code = '<script type="text/javascript">';
 			$url = remove_query_arg( array( 'remove_item', 'removed_item', 'add-to-cart', 'added-to-cart' ) );
 			foreach ( $this->countdown_seconds as $class => $time ) {
-				$code .= "jQuery('#{$class}').countdown({until: '+{$time}', format: 'dhmS', layout: '{d<}{dn} {dl} {d>}{h<}{hn} {hl} {h>}{m<}{mn} {ml} {m>}{s<}{sn} {sl}{s>}', expiryUrl: '{$url}'});";
+				$code .= "jQuery('.{$class}').countdown({until: '+{$time}', format: 'dhmS', layout: '{d<}{dn} {dl} {d>}{h<}{hn} {hl} {h>}{m<}{mn} {ml} {m>}{s<}{sn} {sl}{s>}', expiryUrl: '{$url}'});";
 			}
 			$code .= '</script>';
 
