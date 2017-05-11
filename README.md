@@ -3,10 +3,10 @@
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY  
 **Tags:** woocommerce, cart, expire  
 **Requires at least:** 4.0  
-**Tested up to:** 4.7.3  
-**Stable tag:** 2.00  
+**Tested up to:** 4.7.4  
+**Stable tag:** 2.10  
 **WC requires at least:** 2.2  
-**WC tested up to:** 3.0.2  
+**WC tested up to:** 3.0.5  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -65,8 +65,20 @@ We recommend turning off page and database caching for pages affected by this pl
 uses the default Woocommerce "shop" page and W3 Total Cache, add "shop/*" (without the quotes) to "Never cache the 
 following pages:" at the page cache and database cache settings.
 
+### Does this plugin work with Suhosin? ###
+
+Yes it does, but the default character length (64) for POST/REQUEST variable names is not sufficient. I suggest following
+the recomendations from WooCommerce and increasing these values. For more information:
+https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-saving-variations-rates-etc/
+
 
 ## Changelog ##
+### 2.10 ###
+* Fix issue where items that are actually out of stock show pending
+* Make sure we are backwards compatible with WooCommerce < 2.6
+* Add whitelist of functions that we return real stock for and not virtual to deal with some WC 3.x issues
+* Fix issue with timer stopping on cart update
+
 ### 2.00 ###
 * Add support for WooCommerce 3.0
 * Upgrade jquery countdown to version 2.1.0 (http://keith-wood.name/countdown.html)
