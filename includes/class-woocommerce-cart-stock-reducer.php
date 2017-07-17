@@ -741,8 +741,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function get_availability_text( $text, $product ) {
 		$stock = $this->get_virtual_stock_available( $product );
-		if ( null !== $stock ) {
-			if ( $product->backorders_allowed() && $stock < 1 ) {
+		if ( null !== $stock && $stock < 1 ) {
+			if ( $product->backorders_allowed() ) {
 				// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
 				// purchases have been completed or expired.  Otherwise the situation is too complicated.
 				$text = apply_filters( 'wc_csr_stock_backorder_pending_text', $this->stock_pending, array(), $product );
@@ -750,7 +750,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				$text = apply_filters( 'wc_csr_stock_backorder_notify_text', __( 'Available on backorder', 'woocommerce' ), array(), $product );
 			} elseif ( $product->backorders_allowed() ) {
 				$text = apply_filters( 'wc_csr_stock_backorder_text', __( 'In stock', 'woocommerce' ), array(), $product );
-			} elseif ( ! empty( $this->stock_pending ) && $stock < 1 ) {
+			} elseif ( ! empty( $this->stock_pending ) ) {
 				// Override text via configurable option
 				$text = apply_filters( 'wc_csr_stock_pending_text', $this->stock_pending, $text, $product );
 			}
@@ -762,8 +762,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function get_availability_class( $class, $product ) {
 		$stock = $this->get_virtual_stock_available( $product );
 
-		if ( null !== $stock ) {
-			if ( $product->backorders_allowed() && $stock > 0 ) {
+		if ( null !== $stock && $stock < 1 ) {
+			if ( $product->backorders_allowed() ) {
 				// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
 				// purchases have been completed or expired.  Otherwise the situation is too complicated.
 				$class = 'out-of-stock';
@@ -771,7 +771,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				$class = 'available-on-backorder';
 			} elseif ( $product->backorders_allowed() ) {
 				$class = 'in-stock';
-			} elseif ( ! empty( $this->stock_pending ) && $stock < 1 ) {
+			} elseif ( ! empty( $this->stock_pending ) ) {
 				$class = 'out-of-stock';
 			}
 		}
