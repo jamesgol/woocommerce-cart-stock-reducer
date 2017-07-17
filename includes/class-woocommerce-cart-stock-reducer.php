@@ -14,6 +14,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	private $language = null;
 	private $num_expiring_items = 0;
 	private $checking_virtual_stock = false;
+	private $virtual_depth = 0;
 
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
@@ -966,13 +967,16 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			return null;
 		}
 
+		// Increase virtual depth count which is used to keep from double counting items in cart
+		$this->virtual_depth++;
+
 		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
 			$stock = $product->get_total_stock();
 		} else {
-			$stock = $product->get_stock_quantity( 'edit' );
+			$stock = $product->get_stock_quantity();
 		}
 
-		if ( $stock > 0 ) {
+		if ( $stock > 0 && $this->virtual_depth <= 1 ) {
 		    $product_field = $this->get_field_managing_stock( $product );
 
 			// The minimum quantity of stock to have in order to skip checking carts.  This should be higher than the amount you expect could sell before the carts expire.
@@ -981,6 +985,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$min_no_check = apply_filters( 'wc_csr_min_no_check', false, $id, $stock );
 			if ( false != $min_no_check && $min_no_check < (int) $stock ) {
 				// Don't bother searching through all the carts if there is more than 'min_no_check' quantity
+				$this->virtual_depth--;
 				return $stock;
 			}
 
@@ -992,6 +997,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			// Item is actually not in stock, returning null keeps us from trying to handle the product
 			$stock = null;
 		}
+		$this->virtual_depth--;
 		return $stock;
 	}
 
