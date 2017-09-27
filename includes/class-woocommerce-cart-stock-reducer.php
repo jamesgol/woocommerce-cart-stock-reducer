@@ -4,9 +4,6 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class WC_Cart_Stock_Reducer extends WC_Integration {
-
-	private $expiration_time_cache = array();
-
 	// Variables used for specific session
 	private $item_expire_message = null;
 	private $countdown_seconds   = array();
@@ -15,6 +12,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	private $num_expiring_items = 0;
 	private $checking_virtual_stock = false;
 	private $virtual_depth = 0;
+	private $sessions;
 
 	public function __construct() {
 		$this->id                 = 'woocommerce-cart-stock-reducer';
@@ -43,11 +41,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		// Filters related to stock quantity
 		if ( 'yes' === $this->cart_stock_reducer ) {
+		    add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 			add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
 			add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
 			add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
 			add_filter( 'wc_csr_stock_pending_text', array( $this, 'replace_stock_pending_text' ), 10, 3 );
-			add_filter( 'woocommerce_add_to_cart_redirect', array( $this, 'force_session_save' ), 10 );
 			add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
 			add_filter( 'woocommerce_get_undo_url', array( $this, 'get_undo_url' ), 10, 2 );
 			if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
@@ -105,6 +103,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	}
 
+	public function woocommerce_init() {
+		require_once 'class-wc-csr-session.php';
+		require_once 'class-wc-csr-sessions.php';
+		$this->sessions = new WC_CSR_Sessions;
+	}
+
 	/**
 	 * Search the countdown files for the closest localization match
 	 *
@@ -140,17 +144,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			array_unshift( $links, $settings_link );
 		}
 		return $links;
-	}
-
-
-
-	/**
-	 * Called from hook 'woocommerce_add_to_cart_redirect', odd choice but it gets called after a succesful save of an item
-	 * Need to force the session to be saved so the quantity can be correctly calculated for the page load in this same session
-	 */
-	public function force_session_save( $default ) {
-		WC()->session->save_data();
-		return $default;
 	}
 
 	/**
@@ -877,10 +870,21 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	private function expiration_time_cache( $item_id ) {
-		if ( isset( $this->expiration_time_cache[ $item_id ] ) ) {
-			return $this->expiration_time_cache[ $item_id ];
+		$earliest = false;
+		if ( $items = $this->sessions->find_items_in_carts( $item_id ) ) {
+			$customer_id = $this->get_customer_id();
+			foreach ( $items as $id => $cart_item ) {
+				if ( $customer_id == $id ) {
+					// Skip customers own items
+					continue;
+				}
+				if ( isset( $cart_item['csr_expire_time'] ) && ( false === $earliest || $cart_item['csr_expire_time'] < $earliest ) ) {
+					$earliest = $cart_item['csr_expire_time'];
+				}
+			}
 		}
-		return false;
+
+		return $earliest;
 	}
 
 	private function items_in_cart( $item_id ) {
@@ -941,7 +945,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				return $stock;
 			}
 
-			$in_carts = $this->quantity_in_carts( $id, $product_field, $ignore );
+			$in_carts = $this->sessions->quantity_in_carts( $id, $product_field, $ignore );
 			if ( 0 < $in_carts ) {
 				$stock = ( $stock - $in_carts );
 			}
@@ -989,7 +993,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				return $stock;
 			}
 
-			$in_carts = $this->quantity_in_carts( $id, $product_field, $ignore );
+			$in_carts = $this->sessions->quantity_in_carts( $id, $product_field, $ignore );
 			if ( 0 < $in_carts ) {
 				$stock = ( $stock - $in_carts );
 			}
@@ -1056,78 +1060,16 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return false;
 	}
 
-	/**
-	 * Search through all sessions and count quantity of $item in all carts
-	 *
-	 * @param int $item WooCommerce item ID
-	 * @param string $field Which field to use to match.  'variation_id' or 'product_id'
-	 * @param bool $ignore true if active users count should be ignored
-	 *
-	 * @return int Total number of items
-	 */
-	public function quantity_in_carts( $item, $field = 'product_id', $ignore = false ) {
-		global $wpdb;
-		$quantity = 0;
-		$item = (int) $item;
-
-		/* This should be the most efficient way to do this, though the proper way
-		 * would be to retrieve a list of all the session and use get_option or
-		 * the WooCommerce API to iterate through the sessions.  Though it is possible
-		 * that using get_option and an external cache will be faster on a heavy site.
-		 * Need to benchmark... In my free time.
-    	*/
-		if ( version_compare( WOOCOMMERCE_VERSION, '2.5' ) >= 0 ) {
-			// WooCommerce >= 2.5 stores session data in a separate table
-			$results = $wpdb->get_results( "SELECT session_key, session_value FROM {$wpdb->prefix}woocommerce_sessions WHERE session_value LIKE '%\"{$field}\";i:{$item};%'", OBJECT );
+	function get_customer_id() {
+		$WC = WC();
+		if ( isset( $WC, $WC->session ) ) {
+			// A user report a fatal error when trying to call get_customer_id.
+			// Even though it was likely some other plugin/themes fault, lets play safely.
+			$customer_id = $WC->session->get_customer_id();
 		} else {
-			$results = $wpdb->get_results( "SELECT option_name, option_value as session_value FROM {$wpdb->options} WHERE option_name LIKE '_wc_session_%' AND option_value LIKE '%\"{$field}\";i:{$item};%'", OBJECT );
+			$customer_id = null;
 		}
-
-		if ( $results ) {
-			$WC = WC();
-			if ( isset( $WC, $WC->session ) ) {
-				// A user report a fatal error when trying to call get_customer_id.
-				// Even though it was likely some other plugin/themes fault, lets play safely.
-				$customer_id = $WC->session->get_customer_id();
-			} else {
-				$customer_id = null;
-			}
-			foreach ( $results as $result ) {
-				if ( null !== $customer_id &&
-					( isset( $result->session_key ) && $result->session_key === $customer_id ) ||
-					( isset( $result->option_name ) && $result->option_name === '_wc_session_' . $customer_id ) ) {
-					$row_in_own_cart = true;
-				} else {
-					$row_in_own_cart = false;
-				}
-				if ( true === $ignore && true === $row_in_own_cart ) {
-					continue;
-				}
-				$session = unserialize( $result->session_value );
-				if ( isset( $session[ 'cart' ] ) ) {
-					$cart = unserialize( $session[ 'cart' ] );
-					foreach ( $cart as $key => $row ) {
-						if ( isset( $row[ 'csr_expire_time' ] ) && $this->is_expired( $row[ 'csr_expire_time' ], isset( $session[ 'order_awaiting_payment' ] ) ? $session[ 'order_awaiting_payment' ] : null ) ) {
-							// Skip items that are expired in carts
-							continue;
-						}
-						if ( $item === $row[ $field ] ) {
-							$quantity += $row[ 'quantity' ];
-						}
-						if ( isset( $row[ 'csr_expire_time' ] ) && false === $row_in_own_cart ) {
-							// Don't track expiration time of items in the users own cart
-							if ( ! isset( $this->expiration_time_cache[ $item ] ) || $row[ 'csr_expire_time' ] < $this->expiration_time_cache[ $item ] ) {
-								// Cache the earliest time an item is expiring
-								$this->expiration_time_cache[ $item ] = $row[ 'csr_expire_time' ];
-							}
-						}
-					}
-				}
-
-			}
-		}
-
-		return $quantity;
+		return $customer_id;
 	}
 
 	/**
