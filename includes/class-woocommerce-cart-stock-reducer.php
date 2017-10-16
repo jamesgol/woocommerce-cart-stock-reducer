@@ -515,8 +515,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 						$expire_time_text = $item_expire_time;
 					}
 				}
+				$expire_time_text = apply_filters( 'wc_csr_expire_time_text', $expire_time_text, $item, $key, $this );
 				if ( null !== $expire_time_text && 'never' !== $expire_time_text ) {
-					$item[ 'csr_expire_time' ] = strtotime( $expire_time_text );
+					$item[ 'csr_expire_time' ] = apply_filters( 'wc_csr_expire_time', strtotime( $expire_time_text ), $expire_time_text, $item, $key, $this );
 					$item[ 'csr_expire_time_text' ] = $expire_time_text;
 				}
 			}
