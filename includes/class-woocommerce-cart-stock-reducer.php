@@ -286,6 +286,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			// This should never happen, but better to be safe
 			$cart = WC()->cart;
 		}
+		if ( !isset( $cart, $cart->cart_contents, $cart->cart_contents[ $cart_id ] ) ) {
+			// If the cart items do not exist do not try to remove them.
+			return;
+		}
 		if ( 'yes' === $this->expire_items ) {
 			$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
 			if ( !empty( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
