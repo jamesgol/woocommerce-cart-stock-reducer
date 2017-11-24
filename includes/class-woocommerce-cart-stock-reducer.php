@@ -1015,6 +1015,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		} else {
 			$ignore = false;
 		}
+
+		if ( false === apply_filters( 'wc_csr_hide_out_of_stock_items', false, $this, $status, $product ) && $this->trace_contains( array( 'is_visible' ) ) ) {
+			// If this is a product visibility check, don't check virtual status
+			return $status;
+		}
+
 		$virtual_stock = $this->get_virtual_stock_available( $product, $ignore );
 		if ( null !== $virtual_stock && $virtual_stock < 1 ) {
 				$status = 'outofstock';
