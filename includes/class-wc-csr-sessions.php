@@ -22,6 +22,8 @@ class WC_CSR_Sessions  {
 			$this->sessions[ $customer_id ] = $WC->session;
 		}
 		$this->prime_cache();
+		add_filter( 'manage_product_posts_columns', array( $this, 'product_columns' ), 11, 1 );
+		add_action( 'manage_product_posts_custom_column', array( $this, 'render_product_columns' ), 11, 1 );
 	}
 
 	/**
@@ -94,20 +96,19 @@ class WC_CSR_Sessions  {
 		 * by then this functionality will be built into WC
 		 */
 
-		foreach ( $this->sessions as $id => $session ) {
-			if ( $ignore && $id == $this->current_customer_id ) {
+		$items = $this->find_items_in_carts( $item );
+
+		foreach ( $items as $session_id => $item_data ) {
+			if ( $ignore && $session_id == $this->current_customer_id ) {
 				// Skip users own items if $ignore is true
 				continue;
 			}
-			if ( $cart = $session->cart ) {
-				foreach ( $session->cart as $cart_id => $cart_item ) {
-					if ( $cart_item[ $field ] === $item ) {
-						$quantity += $cart_item['quantity'];
-					}
-				}
+			if ( $item === $item_data['product_id'] || $item === $item_data['variation_id'] ) {
+				$quantity += $item_data['quantity'];
 			}
 		}
-		return $quantity;
+
+		return (int) $quantity;
 	}
 
 	public function find_items_in_carts( $item ) {
@@ -125,4 +126,48 @@ class WC_CSR_Sessions  {
 		return $items;
 	}
 
+	/**
+	 * Define custom columns for products.
+	 *
+	 * @param  array $existing_columns
+	 *
+	 * @return array
+	 */
+	public function product_columns( $existing_columns ) {
+		$existing_columns = $this->array_insert_after( $existing_columns, 'is_in_stock', array( 'qty_in_carts' => __( 'Quantity in Carts', 'woocommerce-cart-stock-reducer' ) ) );
+
+		return $existing_columns;
+	}
+
+	public function array_insert_after( $array, $after_key, $new = array() ) {
+		$pos = array_search( $after_key, array_keys( $array ) );
+		$pos++;
+		$result = array_slice( $array, 0, $pos ) + $new + array_slice( $array, $pos );
+
+		return $result;
+	}
+
+	/**
+	 * Output custom columns for products.
+	 *
+	 * @param string $column
+	 */
+	public function render_product_columns( $column ) {
+		global $post, $the_product;
+
+		if ( 'qty_in_carts' === $column ) {
+
+			if ( empty( $the_product ) || $the_product->get_id() != $post->ID ) {
+				$the_product = wc_get_product( $post );
+			}
+
+			// Only continue if we have a product.
+			if ( empty( $the_product ) ) {
+				return;
+			}
+
+			echo (int) $this->quantity_in_carts( $post->ID );
+		}
+
+	}
 }
