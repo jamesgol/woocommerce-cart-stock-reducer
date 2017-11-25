@@ -73,6 +73,12 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= Dev =
+* Change method that quantity in carts are calculated to be much more efficient (less queries)
+* Display quantity in carts on WooCommerce backend table
+* If WooCommerce 'Hide out of stock items from the catalog' feature is enabled make sure virtually out of stock items are not hidden (can be override with a filter)
+* Allow expiration time to be adjusted dynamically with 'wc_csr_expire_time_text' and 'wc_csr_expire_time' filters
+
 = 2.10 =
 * Fix issue where items that are actually out of stock show pending
 * Make sure we are backwards compatible with WooCommerce < 2.6
