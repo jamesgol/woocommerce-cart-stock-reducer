@@ -1020,8 +1020,15 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$ignore = false;
 		}
 
-		if ( false === apply_filters( 'wc_csr_hide_out_of_stock_items', false, $this, $status, $product ) && $this->trace_contains( array( 'is_visible' ) ) ) {
+		// Make sure backend admin always shows real status
+		$contains_functions = array( 'render_product_columns' );
+
+		if ( false === apply_filters( 'wc_csr_hide_out_of_stock_items', false, $this, $status, $product ) ) {
 			// If this is a product visibility check, don't check virtual status
+			$contains_functions[] = 'is_visible';
+		}
+
+		if ( $this->trace_contains( $contains_functions ) ) {
 			return $status;
 		}
 
@@ -1034,7 +1041,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function product_get_stock_quantity( $quantity, $product ) {
 		if ( false === $this->checking_virtual_stock ) {
-			$never_virtual_whitelist = array( 'wc_reduce_stock_levels' );
+			$never_virtual_whitelist = array( 'wc_reduce_stock_levels', 'render_product_columns' );
 			if ( $this->trace_contains( $never_virtual_whitelist ) ) {
 				// For WooCommerce 3.x we need to make sure we return the real quantity to these functions
 				// otherwise they mark items as out of stock
