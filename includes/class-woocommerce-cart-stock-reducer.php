@@ -106,7 +106,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function woocommerce_init() {
 		require_once 'class-wc-csr-session.php';
 		require_once 'class-wc-csr-sessions.php';
-		$this->sessions = new WC_CSR_Sessions;
+		$this->sessions = new WC_CSR_Sessions( $this );
 	}
 
 	/**
@@ -1101,7 +1101,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 *
 	 * @return bool true if expired
 	 */
-	protected function is_expired( $expire_time = 'never', $order_awaiting_payment = null ) {
+	public function is_expired( $expire_time = 'never', $order_awaiting_payment = null ) {
 		$expired = false;
 		if ( null !== $order_awaiting_payment && ( $order = new WC_Order( $order_awaiting_payment ) ) ) {
 			if ( version_compare( WC_VERSION, '3.0', '<' ) ) {

@@ -14,13 +14,18 @@ class WC_CSR_Sessions  {
 
 	private $current_customer_id = null;
 
-	public function __construct() {
+	private $csr = null;
+
+	public function __construct( $csr = null ) {
+		$this->csr = $csr;
+
 		$WC = WC();
 		if ( isset( $WC, $WC->session ) ) {
 			// Pre-prime with the current customers session
 			$this->current_customer_id = $customer_id = $WC->session->get_customer_id();
 			$this->sessions[ $customer_id ] = $WC->session;
 		}
+		// @TODO Need method of keeping track of all sessions saved in cache so we can prime from cache vs DB
 		$this->prime_cache();
 		add_filter( 'manage_product_posts_columns', array( $this, 'product_columns' ), 11, 1 );
 		add_action( 'manage_product_posts_custom_column', array( $this, 'render_product_columns' ), 11, 1 );
@@ -71,6 +76,13 @@ class WC_CSR_Sessions  {
 		return $this->sessions;
 	}
 
+	public function get_session( $session = null ) {
+		if ( isset( $session, $this->sessions[ $session ] ) ) {
+			return $this->sessions[ $session ];
+		}
+		return null;
+	}
+
 	/**
 	 * Search through all sessions and count quantity of $item in all carts
 	 *
@@ -103,6 +115,19 @@ class WC_CSR_Sessions  {
 				// Skip users own items if $ignore is true
 				continue;
 			}
+			if ( isset( $item_data['csr_expire_time'] ) ) {
+				if ( $session = $this->get_session( $session_id ) ) {
+					$order_awaiting_payment = $session->get( 'order_awaiting_payment', null );
+				} else {
+					$order_awaiting_payment = null;
+				}
+				if ( $this->csr->is_expired( $item_data['csr_expire_time'], $order_awaiting_payment ) ) {
+					// Skip items that are expired in carts
+					continue;
+				}
+			}
+
+
 			if ( $item === $item_data['product_id'] || $item === $item_data['variation_id'] ) {
 				$quantity += $item_data['quantity'];
 			}
