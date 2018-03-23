@@ -742,7 +742,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function get_availability_text( $text, $product ) {
 		$stock = $this->get_virtual_stock_available( $product );
-		if ( null !== $stock && $stock < 1 ) {
+		if ( isset( $stock ) && $stock <= 0 ) {
 			if ( $product->backorders_allowed() ) {
 				// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
 				// purchases have been completed or expired.  Otherwise the situation is too complicated.
@@ -763,7 +763,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function get_availability_class( $class, $product ) {
 		$stock = $this->get_virtual_stock_available( $product );
 
-		if ( null !== $stock && $stock < 1 ) {
+		if ( isset( $stock ) && $stock <= 0 ) {
 			if ( $product->backorders_allowed() ) {
 				// If there are items in stock but backorders are allowed.  Only let backorders happen after existing
 				// purchases have been completed or expired.  Otherwise the situation is too complicated.
@@ -1036,7 +1036,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 
 		$virtual_stock = $this->get_virtual_stock_available( $product, $ignore );
-		if ( null !== $virtual_stock && $virtual_stock < 1 ) {
+		if ( isset( $virtual_stock ) && $virtual_stock <= 0 ) {
 				$status = 'outofstock';
 		}
 		return $status;

@@ -93,7 +93,7 @@ class WC_CSR_Sessions  {
 	 * @param string $field Which field to use to match.  'variation_id' or 'product_id'
 	 * @param bool $ignore true if active users count should be ignored
 	 *
-	 * @return int Total number of items
+	 * @return int|double Total number of items
 	 */
 	public function quantity_in_carts( $item, $field = 'product_id', $ignore = false ) {
 		$quantity = 0;
@@ -136,7 +136,8 @@ class WC_CSR_Sessions  {
 			}
 		}
 
-		return (int) $quantity;
+		// Force quantity to number, but allow other than int
+		return 0 + $quantity;
 	}
 
 	public function find_items_in_carts( $item ) {
