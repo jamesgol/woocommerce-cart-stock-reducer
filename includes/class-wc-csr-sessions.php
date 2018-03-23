@@ -62,7 +62,10 @@ class WC_CSR_Sessions  {
 				if ( empty( $result->session_expiry ) ) {
 					// @TODO Temporary till figure out what < 2.5 did
 					$expiry = time() + 60 * 60 * 48;
+				} else {
+					$expiry = $result->session_expiry;
 				}
+
 				if ( !array_key_exists( $customer_id, $this->sessions ) ) {
 					$this->sessions[ $customer_id ] = new WC_CSR_Session( $customer_id, $result->session_value, $expiry );
 					wp_cache_set( $this->get_cache_prefix() . $customer_id, $result->session_value, WC_SESSION_CACHE_GROUP, $expiry - time() );
