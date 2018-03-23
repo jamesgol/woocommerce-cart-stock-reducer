@@ -979,6 +979,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			return null;
 		}
 
+		// Make sure this page is not cached
+		WC_Cache_Helper::set_nocache_constants();
+
 		// Increase virtual depth count which is used to keep from double counting items in cart
 		$this->virtual_depth++;
 
