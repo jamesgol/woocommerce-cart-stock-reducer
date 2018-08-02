@@ -118,6 +118,11 @@ class WC_CSR_Sessions  {
 				// Skip users own items if $ignore is true
 				continue;
 			}
+			if ( true === apply_filters( 'wc_csr_skip_cart_item', false, $item, $session_id, $item_data, $this ) ) {
+				// Allow users to determine if items should be ignored in the total count.
+				// Useful only if you want specific users items to be counted in the virtual stock
+				continue;
+			}
 			if ( isset( $item_data['csr_expire_time'] ) ) {
 				if ( $session = $this->get_session( $session_id ) ) {
 					$order_awaiting_payment = $session->get( 'order_awaiting_payment', null );
