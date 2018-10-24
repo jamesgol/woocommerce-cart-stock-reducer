@@ -59,3 +59,6 @@ script:
     if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
       phpcs
     fi
+
+install:
+  - composer global require wp-cli/wp-cli
