@@ -42,6 +42,7 @@ before_script:
       else
         composer global require "phpunit/phpunit=5.7.*"
       fi
+      ln -s /tmp/wordpress-tests-lib/wp-tests-config.php /tmp/wordpress/wp-config.php
     fi
   - |
     if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
