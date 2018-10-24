@@ -50,9 +50,9 @@ before_script:
     fi
   - |
     if [[ "$WOOCOMMERCE_VER" == "dev" ]] ; then
-      wp plugin install https://github.com/woocommerce/woocommerce/archive/master.zip --activate
+      cd /tmp/wordpress && wp plugin install https://github.com/woocommerce/woocommerce/archive/master.zip --activate
     else
-      wp plugin install woocommerce --version=${WOOCOMMERCE_VER} --activate
+      cd /tmp/wordpress && wp plugin install woocommerce --version=${WOOCOMMERCE_VER} --activate
     fi
 
 script:
