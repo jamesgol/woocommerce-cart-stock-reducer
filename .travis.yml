@@ -53,7 +53,7 @@ before_script:
     else
       composer require --dev --prefer-source woocommerce/woocommerce
     fi
-
+  - composer show -i -P
 script:
   - |
     if [[ ! -z "$WP_VERSION" ]] ; then
