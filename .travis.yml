@@ -16,6 +16,11 @@ cache:
     - vendor
     - $HOME/.composer/cache
 
+env:
+  - WOOCOMMERCE_VER=dev
+  - WOOCOMMERCE_VER=3.5.0
+  - WOOCOMMERCE_VER=2.6.14
+
 matrix:
   include:
     - php: 7.1
