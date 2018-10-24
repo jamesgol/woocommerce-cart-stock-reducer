@@ -42,7 +42,6 @@ before_script:
       else
         composer global require "phpunit/phpunit=5.7.*"
       fi
-      ln -s /tmp/wordpress-tests-lib/wp-tests-config.php /tmp/wordpress/wp-config.php
     fi
   - |
     if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
@@ -51,9 +50,9 @@ before_script:
     fi
   - |
     if [[ "$WOOCOMMERCE_VER" == "dev" ]] ; then
-      cd /tmp/wordpress && wp plugin install https://github.com/woocommerce/woocommerce/archive/master.zip --activate
+      composer require --dev --prefer-src woocommerce/woocommerce
     else
-      cd /tmp/wordpress && wp plugin install woocommerce --version=${WOOCOMMERCE_VER} --activate
+      composer require --dev --prefer-src woocommerce/woocommerce
     fi
 
 script:
@@ -66,6 +65,3 @@ script:
     if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
       phpcs
     fi
-
-install:
-  - composer global require wp-cli/wp-cli
