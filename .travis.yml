@@ -1,0 +1,66 @@
+sudo: false
+
+language: php
+php:
+  - '7.1'
+  - '7.0'
+  - '5.6'
+
+notifications:
+  email:
+    on_success: never
+    on_failure: change
+
+branches:
+  only:
+    - master
+
+cache:
+  directories:
+    - vendor
+    - $HOME/.composer/cache
+
+env:
+  - WOOCOMMERCE_VER=dev WP_VERSION=latest
+  - WOOCOMMERCE_VER=3.5.0 WP_VERSION=latest
+  - WOOCOMMERCE_VER=2.6.14 WP_VERSION=latest
+
+before_script:
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+  - |
+    if [ -f ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then
+      phpenv config-rm xdebug.ini
+    else
+      echo "xdebug.ini does not exist"
+    fi
+  - |
+    if [[ ! -z "$WP_VERSION" ]] ; then
+      bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
+      if [[ ${TRAVIS_PHP_VERSION:0:2} == "5." ]]; then
+        composer global require "phpunit/phpunit=4.8.*"
+      else
+        composer global require "phpunit/phpunit=5.7.*"
+      fi
+    fi
+  - |
+    if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
+      composer global require wp-coding-standards/wpcs
+      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs
+    fi
+  - |
+    if [[ "$WOOCOMMERCE_VER" == "dev" ]] ; then
+      composer require --dev --prefer-source woocommerce/woocommerce:dev-master
+    else
+      composer require --dev --prefer-source woocommerce/woocommerce:${WOOCOMMERCE_VER}
+    fi
+  - composer show -i -P
+script:
+  - |
+    if [[ ! -z "$WP_VERSION" ]] ; then
+      phpunit
+      WP_MULTISITE=1 phpunit
+    fi
+  - |
+    if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
+      phpcs
+    fi
