@@ -49,9 +49,9 @@ before_script:
     fi
   - |
     if [[ "$WOOCOMMERCE_VER" == "dev" ]] ; then
-      composer require --dev --prefer-source woocommerce/woocommerce
+      composer require --dev --prefer-source woocommerce/woocommerce:dev-master
     else
-      composer require --dev --prefer-source woocommerce/woocommerce
+      composer require --dev --prefer-source woocommerce/woocommerce:{$WOOCOMMERCE_VER}
     fi
   - composer show -i -P
 script:
