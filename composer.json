@@ -5,5 +5,8 @@
         "woocommerce/woocommerce"
       ]
     }
+  },
+  "require-dev": {
+    "woocommerce/woocommerce": "dev-master"
   }
 }
