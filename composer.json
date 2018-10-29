@@ -1,0 +1,9 @@
+{
+  "extra": {
+    "installer-paths": {
+      "vendor/{$vendor}/{$name}": [
+        "woocommerce/woocommerce"
+      ]
+    }
+  },
+}
