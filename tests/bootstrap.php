@@ -17,8 +17,7 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 
 // Code from https://github.com/liquidweb/woocommerce-custom-orders-table
 
-//$_bootstrap = dirname( __DIR__ ) . '/vendor/woocommerce/woocommerce/tests/bootstrap.php';
-$_bootstrap = dirname( __DIR__ ) . '/wp-content/plugins/woocommerce/tests/bootstrap.php';
+$_bootstrap = dirname( __DIR__ ) . '/vendor/woocommerce/woocommerce/tests/bootstrap.php';
 
 // Verify that Composer dependencies have been installed.
 if ( ! file_exists( $_bootstrap ) ) {

@@ -1,0 +1,12 @@
+{
+  "extra": {
+    "installer-paths": {
+      "vendor/{$vendor}/{$name}": [
+        "woocommerce/woocommerce"
+      ]
+    }
+  },
+  "require-dev": {
+    "woocommerce/woocommerce": "dev-master"
+  }
+}
