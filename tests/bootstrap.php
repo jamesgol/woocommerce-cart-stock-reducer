@@ -29,9 +29,6 @@ if ( ! file_exists( $_bootstrap ) ) {
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 require_once $_bootstrap;
 
-// Give access to tests_add_filter() function.
-//require_once $_tests_dir . '/includes/functions.php';
-require dirname( dirname( __FILE__ ) ) . '/woocommerce-cart-stock-reducer.php';
-
-// Start up the WP testing environment.
-//require $_tests_dir . '/includes/bootstrap.php';
+require_once dirname( dirname( __FILE__ ) ) . '/woocommerce-cart-stock-reducer.php';
+// Reset the integration support after we've added our filters
+WC()->integrations = new WC_Integrations();
