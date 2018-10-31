@@ -25,10 +25,14 @@ if ( ! file_exists( $_bootstrap ) ) {
 	exit( 1 );
 }
 
+// Gives access to tests_add_filter() function.
+require_once $_tests_dir . '/includes/functions.php';
+// Manually load the plugin on muplugins_loaded.
+function _manually_load_plugin() {
+	require dirname( dirname( __FILE__ ) ) . '/woocommerce-cart-stock-reducer.php';
+}
+tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
+
 // Finally, Start up the WP testing environment.
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 require_once $_bootstrap;
-
-require_once dirname( dirname( __FILE__ ) ) . '/woocommerce-cart-stock-reducer.php';
-// Reset the integration support after we've added our filters
-WC()->integrations = new WC_Integrations();
