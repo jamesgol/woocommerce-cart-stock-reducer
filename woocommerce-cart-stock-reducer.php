@@ -6,7 +6,7 @@ Version: 2.10
 Author: James Golovich
 License: GPL2
 Requires at least: 4.0
-Tested up to: 4.7.4
+Tested up to: 5.0
 Text Domain: woocommerce-cart-stock-reducer
 Domain Path: /languages/
 */
