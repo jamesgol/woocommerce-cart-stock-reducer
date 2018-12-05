@@ -3,10 +3,10 @@
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY  
 **Tags:** woocommerce, cart, expire  
 **Requires at least:** 4.0  
-**Tested up to:** 4.7.4  
-**Stable tag:** 2.10  
-**WC requires at least:** 2.2  
-**WC tested up to:** 3.0.5  
+**Tested up to:** 5.0  
+**Stable tag:** 3.00  
+**WC requires at least:** 3.0  
+**WC tested up to:** 3.5.2  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -73,6 +73,12 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 ## Changelog ##
+### Dev ###
+* Change method that quantity in carts are calculated to be much more efficient (less queries)
+* Display quantity in carts on WooCommerce backend table
+* If WooCommerce 'Hide out of stock items from the catalog' feature is enabled make sure virtually out of stock items are not hidden (can be override with a filter)
+* Allow expiration time to be adjusted dynamically with 'wc_csr_expire_time_text' and 'wc_csr_expire_time' filters
+
 ### 2.10 ###
 * Fix issue where items that are actually out of stock show pending
 * Make sure we are backwards compatible with WooCommerce < 2.6
