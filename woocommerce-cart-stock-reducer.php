@@ -31,6 +31,10 @@ Domain Path: /languages/
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 function make_cart_stock_reducer_go_now( $integrations = array() ) {
+	if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+		WC_Admin_Settings::add_message( __( 'WooCommerce Cart Stock Reducer requires WooCommerce 3.0 or newer.', 'woocommerce-cart-stock-reducer' ) );
+		return $integrations;
+	}
 	if ( class_exists( 'WC_Integration' ) ) {
 		// Three... Two... One... MAKE ROCKET GO NOW!
 		require_once plugin_dir_path( __FILE__ ) . 'includes/class-woocommerce-cart-stock-reducer.php';
