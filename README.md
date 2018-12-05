@@ -73,7 +73,8 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 ## Changelog ##
-### Dev ###
+### 3.00 ###
+* Set minimum WooCommerce version to 3.0
 * Change method that quantity in carts are calculated to be much more efficient (less queries)
 * Display quantity in carts on WooCommerce backend table
 * If WooCommerce 'Hide out of stock items from the catalog' feature is enabled make sure virtually out of stock items are not hidden (can be override with a filter)
