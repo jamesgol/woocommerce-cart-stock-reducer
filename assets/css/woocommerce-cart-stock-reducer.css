@@ -11,3 +11,7 @@
     word-wrap: break-word;
     border-left: .6180469716em solid rgba(0,0,0,.15);
 }
+
+table.wp-list-table .column-qty_in_carts {
+        width: 22%;
+}

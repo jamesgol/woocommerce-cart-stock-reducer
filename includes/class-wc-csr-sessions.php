@@ -169,6 +169,8 @@ class WC_CSR_Sessions  {
 	 */
 	public function product_columns( $existing_columns ) {
 		$existing_columns = $this->array_insert_after( $existing_columns, 'is_in_stock', array( 'qty_in_carts' => __( 'Quantity in Carts', 'woocommerce-cart-stock-reducer' ) ) );
+		wp_enqueue_style( 'wc-csr-styles' );
+
 
 		return $existing_columns;
 	}
