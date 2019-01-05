@@ -1024,7 +1024,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 
 		// Make sure backend admin always shows real status
-		$contains_functions = array( 'render_product_columns' );
+		$contains_functions = array( 'render_product_columns', 'render_is_in_stock_column' );
 
 		if ( false === apply_filters( 'wc_csr_hide_out_of_stock_items', false, $this, $status, $product ) ) {
 			// If this is a product visibility check, don't check virtual status
@@ -1044,7 +1044,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	public function product_get_stock_quantity( $quantity, $product ) {
 		if ( false === $this->checking_virtual_stock ) {
-			$never_virtual_whitelist = array( 'wc_reduce_stock_levels', 'render_product_columns', 'validate_props' );
+			$never_virtual_whitelist = array( 'wc_reduce_stock_levels', 'render_product_columns', 'validate_props', 'render_is_in_stock_column' );
 			if ( $this->trace_contains( $never_virtual_whitelist ) ) {
 				// For WooCommerce 3.x we need to make sure we return the real quantity to these functions
 				// otherwise they mark items as out of stock
