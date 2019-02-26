@@ -647,7 +647,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$id = false;
 
 		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
-			if ( null !== $product ) {
+			if ( !empty( $product ) ) {
 				$managing_stock = $product->managing_stock();
 				if ( ! empty( $product->variation_id ) ) {
 					if ( true === $managing_stock ) {
@@ -681,7 +681,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			}
 		} else {
 			// WooCommerce 3.0 changed products over to CRUD, so we need to treat it differently
-			if ( null !== $product ) {
+			if ( !empty( $product ) ) {
 				$managing_stock = $product->managing_stock();
 				if ( 'parent' === $managing_stock ) {
 					$id = $product->get_parent_id();
