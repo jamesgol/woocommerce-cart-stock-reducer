@@ -3,10 +3,10 @@
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY  
 **Tags:** woocommerce, cart, expire  
 **Requires at least:** 4.0  
-**Tested up to:** 5.0  
-**Stable tag:** 3.00  
+**Tested up to:** 5.1  
+**Stable tag:** 3.05  
 **WC requires at least:** 3.0  
-**WC tested up to:** 3.5.2  
+**WC tested up to:** 3.5.5  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -73,6 +73,11 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 ## Changelog ##
+### 3.05 ###
+* Ignore expired items when deciding earliest to expire item
+* Ensure actual stock levels are displayed on the backend
+* Fix styling of 'quantity in carts' column on the backend
+
 ### 3.00 ###
 * Set minimum WooCommerce version to 3.0
 * Change method that quantity in carts are calculated to be much more efficient (less queries)
