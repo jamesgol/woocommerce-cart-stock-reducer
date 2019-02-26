@@ -73,6 +73,11 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= Dev =
+* Ignore expired items when deciding earliest to expire item
+* Ensure actual stock levels are displayed on the backend
+* Fix styling of 'quantity in carts' column on the backend
+
 = 3.00 =
 * Set minimum WooCommerce version to 3.0
 * Change method that quantity in carts are calculated to be much more efficient (less queries)

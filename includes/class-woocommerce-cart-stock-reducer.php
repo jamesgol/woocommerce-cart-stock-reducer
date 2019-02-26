@@ -886,8 +886,14 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 					// Skip customers own items
 					continue;
 				}
-				if ( isset( $cart_item['csr_expire_time'] ) && ( false === $earliest || $cart_item['csr_expire_time'] < $earliest ) ) {
-					$earliest = $cart_item['csr_expire_time'];
+				if ( isset( $cart_item['csr_expire_time'] ) ) {
+					if ( $this->is_expired( $cart_item['csr_expire_time'] ) ) {
+						# Ignore expired items
+						continue;
+					}
+					if ( false === $earliest || $cart_item['csr_expire_time'] < $earliest ) {
+						$earliest = $cart_item['csr_expire_time'];
+					}
 				}
 			}
 		}
