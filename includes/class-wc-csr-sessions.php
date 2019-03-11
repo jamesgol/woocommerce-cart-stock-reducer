@@ -113,31 +113,33 @@ class WC_CSR_Sessions  {
 
 		$items = $this->find_items_in_carts( $item );
 
-		foreach ( $items as $session_id => $item_data ) {
+		foreach ( $items as $session_id => $session_data ) {
 			if ( $ignore && $session_id == $this->current_customer_id ) {
 				// Skip users own items if $ignore is true
 				continue;
 			}
-			if ( true === apply_filters( 'wc_csr_skip_cart_item', false, $item, $session_id, $item_data, $this ) ) {
-				// Allow users to determine if items should be ignored in the total count.
-				// Useful only if you want specific users items to be counted in the virtual stock
-				continue;
-			}
-			if ( isset( $item_data['csr_expire_time'] ) ) {
-				if ( $session = $this->get_session( $session_id ) ) {
-					$order_awaiting_payment = $session->get( 'order_awaiting_payment', null );
-				} else {
-					$order_awaiting_payment = null;
-				}
-				if ( $this->csr->is_expired( $item_data['csr_expire_time'], $order_awaiting_payment ) ) {
-					// Skip items that are expired in carts
+			foreach ( $session_data as $item_data ) {
+				if ( true === apply_filters( 'wc_csr_skip_cart_item', false, $item, $session_id, $item_data, $this ) ) {
+					// Allow users to determine if items should be ignored in the total count.
+					// Useful only if you want specific users items to be counted in the virtual stock
 					continue;
 				}
-			}
+				if ( isset( $item_data['csr_expire_time'] ) ) {
+					if ( $session = $this->get_session( $session_id ) ) {
+						$order_awaiting_payment = $session->get( 'order_awaiting_payment', null );
+					} else {
+						$order_awaiting_payment = null;
+					}
+					if ( $this->csr->is_expired( $item_data['csr_expire_time'], $order_awaiting_payment ) ) {
+						// Skip items that are expired in carts
+						continue;
+					}
+				}
 
 
-			if ( $item === $item_data['product_id'] || $item === $item_data['variation_id'] ) {
-				$quantity += $item_data['quantity'];
+				if ( $item === $item_data['product_id'] || $item === $item_data['variation_id'] ) {
+					$quantity += $item_data['quantity'];
+				}
 			}
 		}
 
@@ -152,7 +154,7 @@ class WC_CSR_Sessions  {
 			if ( $cart = $session->cart ) {
 				foreach ( $session->cart as $cart_id => $cart_item ) {
 					if ( $item === $cart_item['product_id'] || $item === $cart_item['variation_id'] ) {
-						$items[$session_id] = $cart_item;
+						$items[ $session_id ][ $cart_item['key'] ] = $cart_item;
 					}
 				}
 			}
