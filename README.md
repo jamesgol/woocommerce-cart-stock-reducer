@@ -4,7 +4,7 @@
 **Tags:** woocommerce, cart, expire  
 **Requires at least:** 4.0  
 **Tested up to:** 5.1  
-**Stable tag:** 3.05  
+**Stable tag:** 3.06  
 **WC requires at least:** 3.0  
 **WC tested up to:** 3.5.5  
 **License:** GPLv2 or later  
@@ -73,6 +73,9 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 ## Changelog ##
+### 3.06 ###
+* Resolve issue where variations managed by the primary item were not being counted
+
 ### 3.05 ###
 * Ignore expired items when deciding earliest to expire item
 * Ensure actual stock levels are displayed on the backend
