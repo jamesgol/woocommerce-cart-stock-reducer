@@ -881,18 +881,20 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$earliest = false;
 		if ( $items = $this->sessions->find_items_in_carts( $item_id ) ) {
 			$customer_id = $this->get_customer_id();
-			foreach ( $items as $id => $cart_item ) {
-				if ( $customer_id == $id ) {
+			foreach ( $items as $cart_id => $cart ) {
+				if ( $customer_id == $cart_id ) {
 					// Skip customers own items
 					continue;
 				}
-				if ( isset( $cart_item['csr_expire_time'] ) ) {
-					if ( $this->is_expired( $cart_item['csr_expire_time'] ) ) {
-						# Ignore expired items
-						continue;
-					}
-					if ( false === $earliest || $cart_item['csr_expire_time'] < $earliest ) {
-						$earliest = $cart_item['csr_expire_time'];
+				foreach ( $cart as $cart_item ) {
+					if ( isset( $cart_item['csr_expire_time'] ) ) {
+						if ( $this->is_expired( $cart_item['csr_expire_time'] ) ) {
+							# Ignore expired items
+							continue;
+						}
+						if ( false === $earliest || $cart_item['csr_expire_time'] < $earliest ) {
+							$earliest = $cart_item['csr_expire_time'];
+						}
 					}
 				}
 			}
