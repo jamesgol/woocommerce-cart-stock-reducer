@@ -173,6 +173,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 		foreach ( wc_get_notices() as $type => $notices ) {
 			foreach ( $notices as $notice ) {
+				if ( is_array( $notice ) ) {
+				    // WooCommerce 3.9.1 changed the notices to be an array instead of string
+				    $notice = $notice['notice'];
+				}
 				if ( false !== strpos( $notice, 'wc-csr-countdown' ) ) {
 					$this->expiration_notice_added = true;
 					return true;
