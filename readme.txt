@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: woocommerce, cart, expire
 Requires at least: 4.0
 Tested up to: 5.3
-Stable tag: 3.08
+Stable tag: 3.09
 WC requires at least: 3.0
 WC tested up to: 3.7.1
 License: GPLv2 or later
@@ -73,6 +73,9 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= 3.09 =
+* Handle changed notice format in WooCommerce version 3.9
+
 = 3.08 = 
 * Fix display bug introduced in 3.06
 
