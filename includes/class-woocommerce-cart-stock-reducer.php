@@ -191,6 +191,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$wc_notices = wc_get_notices();
 		foreach ( $wc_notices as $type => $notices ) {
 			foreach ( $notices as $id => $notice ) {
+				if ( is_array( $notice ) ) {
+					// WooCommerce 3.9.1 changed the notices to be an array instead of string
+					$notice = $notice['notice'];
+				}
 				if ( false !== strpos( $notice, 'wc-csr-countdown' ) ) {
 					$entries_removed++;
 					unset( $wc_notices[ $type ][ $id ] );
