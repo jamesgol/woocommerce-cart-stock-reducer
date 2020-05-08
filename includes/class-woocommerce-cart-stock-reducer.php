@@ -161,7 +161,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			// Ignore users quantity when looking at pages like the shopping cart
 			$ignore = true;
 		}
-		$args[ 'max_value' ] = $this->get_virtual_stock_available( $product, $ignore );
+		if ( ! $product->is_sold_individually() ) {
+			// Only products that aren't sold individually need a max value adjustment
+			$args['max_value'] = $this->get_virtual_stock_available( $product, $ignore );
+		}
 
 		return $args;
 	}
