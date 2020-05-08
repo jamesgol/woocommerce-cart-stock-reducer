@@ -4,9 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: woocommerce, cart, expire
 Requires at least: 4.0
 Tested up to: 5.3
-Stable tag: 3.12
-WC requires at least: 3.0
-WC tested up to: 3.7.1
+Stable tag: 3.15
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,6 +71,9 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= 3.15 =
+* Fix bug that would allow more than one item 'old individually' to be purchased
+
 = 3.10 =
 * Handle a missed changed notice format in WooCommerce version 3.9
 
