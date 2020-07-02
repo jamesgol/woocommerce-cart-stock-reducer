@@ -62,6 +62,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				add_filter( 'woocommerce_get_availability_text', array( $this, 'get_availability_text' ), 10, 2 );
 			}
 			add_filter( 'woocommerce_available_variation', array( $this, 'product_available_variation' ), 10, 3 );
+			add_filter( 'woocommerce_post_class', array( $this, 'woocommerce_post_class' ), 10, 2  );
 
 		}
 
@@ -107,6 +108,18 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		require_once 'class-wc-csr-session.php';
 		require_once 'class-wc-csr-sessions.php';
 		$this->sessions = new WC_CSR_Sessions( $this );
+	}
+
+	public function woocommerce_post_class( $classes, $product ) {
+		$actual_stock = $this->get_actual_stock_available( $product );
+
+		if ( $actual_stock > 0 ) {
+			$virtual_stock = $this->get_virtual_stock_available( $product );
+			if ( is_numeric( $virtual_stock ) && $virtual_stock < 1 && ! in_array( 'stockpending', $classes ) ) {
+				$classes[] = 'stockpending';
+			}
+		}
+		return $classes;
 	}
 
 	/**
