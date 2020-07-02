@@ -1035,6 +1035,24 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		return $stock;
 	}
 
+	/**
+	 * Get the actual quantity available of a specific item
+	 *
+	 * @param object $product WooCommerce WC_Product based class, if not passed the item ID will be used to query
+	 *
+	 * @return int Quantity of items in stock
+	 */
+	public function get_actual_stock_available( $product = null ) {
+		// Increase virtual depth count which is used to keep from double counting items in cart
+		$this->virtual_depth++;
+
+		$stock = $product->get_stock_quantity();
+
+		$this->virtual_depth--;
+		return $stock;
+	}
+
+
 	public function product_get_stock_status( $status, $product ) {
 		if ( is_cart() || is_checkout() ) {
 			$ignore = true;
