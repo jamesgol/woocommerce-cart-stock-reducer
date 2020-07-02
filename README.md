@@ -4,7 +4,7 @@
 **Tags:** woocommerce, cart, expire  
 **Requires at least:** 4.0  
 **Tested up to:** 5.3  
-**Stable tag:** 3.25  
+**Stable tag:** 3.30  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -71,7 +71,7 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 ## Changelog ##
-### 3.25 ###
+### 3.30 ###
 * Add 'stockpending' class to producs that are only virtually out of stock
 * Add 'wc_csr_set_nocache' filter that can be used to disable setting of the no cache constants
 * Added get_actual_stock_function that returns the actual stock of an item instead of the virtual stock
