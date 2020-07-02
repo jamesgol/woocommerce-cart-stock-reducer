@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: woocommerce, cart, expire
 Requires at least: 4.0
 Tested up to: 5.3
-Stable tag: 3.15
+Stable tag: 3.25
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,12 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= 3.25 = 
+* Add 'stockpending' class to producs that are only virtually out of stock
+* Add 'wc_csr_set_nocache' filter that can be used to disable setting of the no cache constants
+* Added get_actual_stock_function that returns the actual stock of an item instead of the virtual stock
+* Added advanced filters 'wc_csr_whitelist_get_stock_status' and 'wc_csr_whitelist_get_stock_quantity' that allow whitelisting functions that return actual data instead of virtual
+
 = 3.15 =
 * Fix bug that would allow more than one item 'old individually' to be purchased
 
