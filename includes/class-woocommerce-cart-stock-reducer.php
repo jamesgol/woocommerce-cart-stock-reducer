@@ -37,11 +37,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		// Actions/Filters to setup WC_Integration elements
 		add_action( 'woocommerce_update_options_integration_' .  $this->id, array( $this, 'process_admin_options' ) );
+		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
+
 		// @todo Add admin interface validation/sanitation
 
 		// Filters related to stock quantity
 		if ( 'yes' === $this->cart_stock_reducer ) {
-		    add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 			add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
 			add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
 			add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
