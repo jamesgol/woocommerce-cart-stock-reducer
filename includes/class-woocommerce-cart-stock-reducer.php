@@ -1159,16 +1159,20 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function is_expired( $expire_time = 'never', $order_awaiting_payment = null ) {
 		$expired = false;
-		if ( null !== $order_awaiting_payment && ( $order = new WC_Order( $order_awaiting_payment ) ) ) {
-			if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
-				$post_status = $order->post_status;
-			} else {
-			    $post_status = $order->get_status();
+		try {
+			if ( null !== $order_awaiting_payment && ( $order = new WC_Order( $order_awaiting_payment ) ) ) {
+				if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
+					$post_status = $order->post_status;
+				} else {
+					$post_status = $order->get_status();
+				}
+				// If a session is marked with an Order ID in 'order_awaiting_payment' check the status to decide if we should skip the expiration check
+				if ( in_array( $post_status, apply_filters( 'wc_csr_expire_ignore_status', $this->ignore_status, $post_status, $expire_time, $order_awaiting_payment ) ) ) {
+					return false;
+				}
 			}
-			// If a session is marked with an Order ID in 'order_awaiting_payment' check the status to decide if we should skip the expiration check
-			if ( in_array( $post_status, apply_filters( 'wc_csr_expire_ignore_status', $this->ignore_status, $post_status, $expire_time, $order_awaiting_payment ) ) ) {
-				return false;
-			}
+		} catch ( Exception $e ) {
+			// WC_Order throws an Exception if you try to check for an order that doesn't exist
 		}
 		if ( 'never' === $expire_time ) {
 			// This should never happen, but better to be safe
