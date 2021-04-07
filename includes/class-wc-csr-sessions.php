@@ -44,27 +44,11 @@ class WC_CSR_Sessions  {
 	protected function prime_cache() {
 		global $wpdb;
 
-		if ( version_compare( WOOCOMMERCE_VERSION, '2.5' ) >= 0 ) {
-			// WooCommerce >= 2.5 stores session data in a separate table
-			$results = $wpdb->get_results( "SELECT session_key, session_value, session_expiry FROM {$wpdb->prefix}woocommerce_sessions", OBJECT );
-		} else {
-			$results = $wpdb->get_results( "SELECT option_name, option_value as session_value FROM {$wpdb->options} WHERE option_name LIKE '_wc_session_%'", OBJECT );
-			// @TODO Need to figure out how < 2.5 did expiry
-		}
+		$results = $wpdb->get_results( "SELECT session_key, session_value, session_expiry FROM {$wpdb->prefix}woocommerce_sessions", OBJECT );
 		if ( $results ) {
 			foreach ( $results as $result ) {
-				if ( isset( $result->option_name ) ) {
-					// Remove '_wc_session_' from string to get cart ID (on WC < 3.0)
-					$customer_id = substr( $result->option_name, 12 );
-				} else {
-					$customer_id = $result->session_key;
-				}
-				if ( empty( $result->session_expiry ) ) {
-					// @TODO Temporary till figure out what < 2.5 did
-					$expiry = time() + 60 * 60 * 48;
-				} else {
-					$expiry = $result->session_expiry;
-				}
+				$customer_id = $result->session_key;
+				$expiry = $result->session_expiry;
 
 				if ( !array_key_exists( $customer_id, $this->sessions ) ) {
 					$this->sessions[ $customer_id ] = new WC_CSR_Session( $customer_id, $result->session_value, $expiry );
