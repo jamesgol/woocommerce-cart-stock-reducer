@@ -16,6 +16,8 @@ class WC_CSR_Sessions  {
 
 	private $csr = null;
 
+	private $sessions_loaded = false;
+
 	public function __construct( $csr = null ) {
 		$this->csr = $csr;
 
@@ -25,8 +27,6 @@ class WC_CSR_Sessions  {
 			$this->current_customer_id = $customer_id = $WC->session->get_customer_id();
 			$this->sessions[ $customer_id ] = $WC->session;
 		}
-		// @TODO Need method of keeping track of all sessions saved in cache so we can prime from cache vs DB
-		$this->prime_cache();
 		add_filter( 'manage_product_posts_columns', array( $this, 'product_columns' ), 11, 1 );
 		add_action( 'manage_product_posts_custom_column', array( $this, 'render_product_columns' ), 11, 1 );
 	}
@@ -40,21 +40,22 @@ class WC_CSR_Sessions  {
 		return WC_Cache_Helper::get_cache_prefix( WC_SESSION_CACHE_GROUP );
 	}
 
-
-	protected function prime_cache() {
+	protected function get_all_items_in_carts( $refresh_cache = false ) {
 		global $wpdb;
 
-		$results = $wpdb->get_results( "SELECT session_key, session_value, session_expiry FROM {$wpdb->prefix}woocommerce_sessions", OBJECT );
-		if ( $results ) {
-			foreach ( $results as $result ) {
-				$customer_id = $result->session_key;
-				$expiry = $result->session_expiry;
+		if ( false === $this->sessions_loaded || true === $refresh_cache ) {
+			$results = $wpdb->get_results( "SELECT session_key, session_value, session_expiry FROM {$wpdb->prefix}woocommerce_sessions", OBJECT );
+			if ( $results ) {
+				foreach ( $results as $result ) {
+					$customer_id = $result->session_key;
+					$expiry      = $result->session_expiry;
 
-				if ( !array_key_exists( $customer_id, $this->sessions ) ) {
-					$this->sessions[ $customer_id ] = new WC_CSR_Session( $customer_id, $result->session_value, $expiry );
-					wp_cache_set( $this->get_cache_prefix() . $customer_id, $result->session_value, WC_SESSION_CACHE_GROUP, $expiry - time() );
+					if ( ! array_key_exists( $customer_id, $this->sessions ) ) {
+						$this->sessions[ $customer_id ] = new WC_CSR_Session( $customer_id, $result->session_value, $expiry );
+					}
 				}
 			}
+			$this->sessions_loaded = true;
 		}
 		return $this->sessions;
 	}
@@ -76,10 +77,11 @@ class WC_CSR_Sessions  {
 	 * @param int $item WooCommerce item ID
 	 * @param string $field Which field to use to match.  'variation_id' or 'product_id'
 	 * @param bool $ignore true if active users count should be ignored
+	 * @param bool $use_cache true if we should use cached data, false will force DB query
 	 *
 	 * @return int|double Total number of items
 	 */
-	public function quantity_in_carts( $item, $field = 'product_id', $ignore = false ) {
+	public function quantity_in_carts( $item, $field = 'product_id', $ignore = false, $use_cache = true ) {
 		$quantity = 0;
 		$item = (int) $item;
 		$customer_id = null;
@@ -95,7 +97,7 @@ class WC_CSR_Sessions  {
 		 * by then this functionality will be built into WC
 		 */
 
-		$items = $this->find_items_in_carts( $item );
+		$items = $this->find_items_in_carts( $item, $use_cache );
 
 		foreach ( $items as $session_id => $session_data ) {
 			if ( $ignore && $session_id == $this->current_customer_id ) {
@@ -131,8 +133,10 @@ class WC_CSR_Sessions  {
 		return 0 + $quantity;
 	}
 
-	public function find_items_in_carts( $item ) {
+	public function find_items_in_carts( $item, $use_cache = true ) {
 		$items = array();
+
+		$this->get_all_items_in_carts( $use_cache ? false : true );
 
 		foreach ( $this->sessions as $session_id => $session ) {
 			if ( $cart = $session->cart ) {

@@ -58,7 +58,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 			add_filter( 'woocommerce_available_variation', array( $this, 'product_available_variation' ), 10, 3 );
 			add_filter( 'woocommerce_post_class', array( $this, 'woocommerce_post_class' ), 10, 2  );
-
 		}
 
 		// Actions/Filters related to cart item expiration
@@ -339,6 +338,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @param $cart_item_data
 	 */
 	public function add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
+		// Force save asap instead of at shutdown
+		WC()->session->save_data();
+
 		if ( in_array( $this->expire_countdown, array( 'always', 'addonly') ) ) {
 			$earliest_expiration_time = null;
 			$number_items_expiring = 0;
@@ -545,7 +547,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function update_cart_validation( $valid, $cart_item_key, $values, $quantity ) {
         $product = $values['data'];
-		$available = $this->get_virtual_stock_available( $product, true );
+		$available = $this->get_virtual_stock_available( $product, true, false );
 		if ( is_numeric( $available ) && $available < $quantity ) {
 			wc_add_notice( __( 'Quantity requested not available', 'woocommerce-cart-stock-reducer' ), 'error' );
 			$valid = false;
@@ -566,9 +568,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function add_cart_validation( $valid, $product_id, $quantity, $variation_id = null, $variations = array() ) {
 		if ( $item = $this->get_item_managing_stock( null, $product_id, $variation_id ) ) {
 			$product = wc_get_product( $item );
-			$available = $this->get_virtual_stock_available( $product );
 			$backorders_allowed = $product->backorders_allowed();
 		    $stock = $product->get_stock_quantity( 'edit' );
+			$available = $this->get_virtual_stock_available( $product, false, false );
 
 			if ( true === $backorders_allowed ) {
 				if ( $available < $quantity && $stock > 0 ) {
@@ -756,10 +758,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 *
 	 * @param object $product WooCommerce WC_Product based class, if not passed the item ID will be used to query
 	 * @param string $ignore Cart Item Key to ignore in the count
+	 * @param bool $use_cache true if we should use cached data, false will force DB query
 	 *
 	 * @return int Quantity of items in stock
 	 */
-	public function get_virtual_stock_available( $product = null, $ignore = false ) {
+	public function get_virtual_stock_available( $product = null, $ignore = false, $use_cache = true ) {
 		$stock = 0;
 
 		$id = $this->get_item_managing_stock( $product );
@@ -792,7 +795,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				return $stock;
 			}
 
-			$in_carts = $this->sessions->quantity_in_carts( $id, $product_field, $ignore );
+			$in_carts = $this->sessions->quantity_in_carts( $id, $product_field, $ignore, $use_cache );
 			if ( 0 < $in_carts ) {
 				$stock = ( $stock - $in_carts );
 			}
