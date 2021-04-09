@@ -3,8 +3,8 @@ Contributors: jamesgol
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY
 Tags: woocommerce, cart, expire
 Requires at least: 4.0
-Tested up to: 5.3
-Stable tag: 3.30
+Tested up to: 5.7
+Stable tag: 3.40
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,12 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= 3.40 = 
+* Reduce time between checking stock and saving sessions (race condition between people adding same item to cart)
+* Removed support for WooCommerce < 3.00
+* Bug fix when another plugin causes WC_Order to not exist
+* Allow backend to show quantity in carts even if plugin isn't enabled
+
 = 3.30 = 
 * Add 'stockpending' class to producs that are only virtually out of stock
 * Add 'wc_csr_set_nocache' filter that can be used to disable setting of the no cache constants
