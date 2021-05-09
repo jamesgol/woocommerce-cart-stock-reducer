@@ -306,16 +306,39 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			return;
 		}
 		if ( 'yes' === $this->expire_items ) {
-			$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
-			if ( !empty( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
-				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'variation_id' ] );
-                if ( method_exists( $product, 'wc_get_formatted_variation' ) ) {
-                    $item_description .= ' (' . $product->wc_get_formatted_variation( true ) . ')';
-                }
+			/*-----------------------------------------*/
+			/* BEGIN NEW CODE						   */
+			/*-----------------------------------------*/
+			// remove whole container, not only one product inside
+			$container = false;
+			if( function_exists('wc_pb_get_bundled_cart_item_container')){
+				$container = wc_pb_get_bundled_cart_item_container( $cart->cart_contents[ $cart_id ], $cart->cart_contents, true );
+			}
+			// check composite after bundle, since it could include the bundle
+			if( function_exists('wc_cp_get_composited_cart_item_container')){
+				$container_id = $container ? $cart->cart_contents[ $container ] : $cart->cart_contents[ $cart_id ];
+				$composite = wc_cp_get_composited_cart_item_container( $container_id, $cart->cart_contents, true ); 
+				$container = $composite ? $composite : $container;
+			}
 
+			if ( $container === false ) {
+				$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
+				if ( !empty( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
+					$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'variation_id' ] );
+					if ( method_exists( $product, 'wc_get_formatted_variation' ) ) {
+						$item_description .= ' (' . $product->wc_get_formatted_variation( true ) . ')';
+					}
+				} else {
+					$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'product_id' ] );
+				}
 			} else {
+				$cart_id = $container;
+				$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
 				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'product_id' ] );
 			}
+			/*-----------------------------------------*/
+			/* END NEW CODE							   */
+			/*-----------------------------------------*/
 			// Include link to item removed during notice
 			$item_description = '<a href="' . esc_url( $product->get_permalink() ) . '">' . $item_description . '</a>';
 			$expired_cart_notice = apply_filters( 'wc_csr_expired_cart_notice', sprintf( __( "Sorry, '%s' was removed from your cart because you didn't checkout before the expiration time.", 'woocommerce-cart-stock-reducer' ), $item_description ), $cart_id, $cart );
