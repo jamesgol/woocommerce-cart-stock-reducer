@@ -908,8 +908,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			$in_carts 	   	  = get_transient('reduced_product_' . $id );
 			$this_cart_qty    = 0;
 			
-			if( $product_qty_in_cart = WC()->cart->get_cart_item_quantities() ) {
-				if( isset($product_qty_in_cart[$id]) ) $this_cart_qty += $product_qty_in_cart[$id];
+			if( is_callable(array(WC()->cart, 'get_cart_item_quantities')) ){
+				if( $product_qty_in_cart = WC()->cart->get_cart_item_quantities() ) {
+					if( isset($product_qty_in_cart[$id]) ) $this_cart_qty += $product_qty_in_cart[$id];
+				}
 			}
 
 			if( $in_carts ) $stock -= ($in_carts - $this_cart_qty);
