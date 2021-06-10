@@ -439,7 +439,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
         }
 
 		if ( $max_qty >= 0 ) {
-			$var['max_qty'] = $max_qty;
+			// Use the lowest of the max_qty, in case another plugin is reducing this number
+			$var['max_qty'] = min( $var['max_qty'], $max_qty );
 		}
 		return $var;
 	}
