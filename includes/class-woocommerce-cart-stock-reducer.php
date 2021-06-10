@@ -167,7 +167,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 		if ( ! $product->is_sold_individually() ) {
 			// Only products that aren't sold individually need a max value adjustment
-			$args['max_value'] = $this->get_virtual_stock_available( $product, $ignore );
+			$virtual_stock =  $this->get_virtual_stock_available( $product, $ignore );
+			// Use the lowest of the max_value, in case another plugin is reducing this number
+			$args['max_value'] = min( $args['max_value'], $virtual_stock );
 		}
 
 		return $args;
