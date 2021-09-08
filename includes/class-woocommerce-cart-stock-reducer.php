@@ -308,11 +308,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( 'yes' === $this->expire_items ) {
 			// remove whole container, not only one product inside
 			$container = false;
-			if( function_exists('wc_pb_get_bundled_cart_item_container')){
+			if ( function_exists('wc_pb_get_bundled_cart_item_container') ) {
 				$container = wc_pb_get_bundled_cart_item_container( $cart->cart_contents[ $cart_id ], $cart->cart_contents, true );
 			}
 			// check composite after bundle, since it could include the bundle
-			if( function_exists('wc_cp_get_composited_cart_item_container')){
+			if ( function_exists('wc_cp_get_composited_cart_item_container') ) {
 				$container_id = $container ? $cart->cart_contents[ $container ] : $cart->cart_contents[ $cart_id ];
 				$composite = wc_cp_get_composited_cart_item_container( $container_id, $cart->cart_contents, true ); 
 				$container = $composite ? $composite : $container;
