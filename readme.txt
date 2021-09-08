@@ -71,6 +71,9 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= Dev =
+* Add support for removing products from composites/containers (Thanks photogenic89)
+
 = 3.40 = 
 * Reduce time between checking stock and saving sessions (race condition between people adding same item to cart)
 * Removed support for WooCommerce < 3.00
