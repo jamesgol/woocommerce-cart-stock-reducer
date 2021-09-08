@@ -306,9 +306,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			return;
 		}
 		if ( 'yes' === $this->expire_items ) {
-			/*-----------------------------------------*/
-			/* BEGIN NEW CODE						   */
-			/*-----------------------------------------*/
 			// remove whole container, not only one product inside
 			$container = false;
 			if( function_exists('wc_pb_get_bundled_cart_item_container')){
@@ -336,9 +333,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
 				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'product_id' ] );
 			}
-			/*-----------------------------------------*/
-			/* END NEW CODE							   */
-			/*-----------------------------------------*/
 			// Include link to item removed during notice
 			$item_description = '<a href="' . esc_url( $product->get_permalink() ) . '">' . $item_description . '</a>';
 			$expired_cart_notice = apply_filters( 'wc_csr_expired_cart_notice', sprintf( __( "Sorry, '%s' was removed from your cart because you didn't checkout before the expiration time.", 'woocommerce-cart-stock-reducer' ), $item_description ), $cart_id, $cart );
