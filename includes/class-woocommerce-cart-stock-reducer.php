@@ -308,15 +308,33 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			return;
 		}
 		if ( 'yes' === $this->expire_items ) {
-			$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
-			if ( !empty( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
-				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'variation_id' ] );
-                if ( method_exists( $product, 'wc_get_formatted_variation' ) ) {
-                    $item_description .= ' (' . $product->wc_get_formatted_variation( true ) . ')';
-                }
+			// remove whole container, not only one product inside
+			$container = false;
+			if ( function_exists('wc_pb_get_bundled_cart_item_container') ) {
+				$container = wc_pb_get_bundled_cart_item_container( $cart->cart_contents[ $cart_id ], $cart->cart_contents, true );
+			}
+			// check composite after bundle, since it could include the bundle
+			if ( function_exists('wc_cp_get_composited_cart_item_container') ) {
+				$container_id = $container ? $cart->cart_contents[ $container ] : $cart->cart_contents[ $cart_id ];
+				$composite = wc_cp_get_composited_cart_item_container( $container_id, $cart->cart_contents, true ); 
+				$container = $composite ? $composite : $container;
+			}
 
-			} else {
+			if ( $container !== false ) {
+				// Product is in container/composite
+				$cart_id = $container;
+				$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
 				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'product_id' ] );
+			} else {
+				$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
+				if ( !empty( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
+					$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'variation_id' ] );
+					if ( method_exists( $product, 'wc_get_formatted_variation' ) ) {
+						$item_description .= ' (' . $product->wc_get_formatted_variation( true ) . ')';
+					}
+				} else {
+					$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'product_id' ] );
+				}
 			}
 			// Include link to item removed during notice
 			$item_description = '<a href="' . esc_url( $product->get_permalink() ) . '">' . $item_description . '</a>';
