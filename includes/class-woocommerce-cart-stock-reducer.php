@@ -318,7 +318,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				$container = $composite ? $composite : $container;
 			}
 
-			if ( $container === false ) {
+			if ( $container !== false ) {
+				// Product is in container/composite
+				$cart_id = $container;
+				$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
+				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'product_id' ] );
+			} else {
 				$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
 				if ( !empty( $cart->cart_contents[ $cart_id ][ 'variation_id' ] ) ) {
 					$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'variation_id' ] );
@@ -328,10 +333,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				} else {
 					$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'product_id' ] );
 				}
-			} else {
-				$cart_id = $container;
-				$item_description = $cart->cart_contents[ $cart_id ][ 'data' ]->get_title();
-				$product = wc_get_product( $cart->cart_contents[ $cart_id ][ 'product_id' ] );
 			}
 			// Include link to item removed during notice
 			$item_description = '<a href="' . esc_url( $product->get_permalink() ) . '">' . $item_description . '</a>';
