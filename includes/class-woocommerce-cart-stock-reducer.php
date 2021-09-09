@@ -905,7 +905,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return bool
 	 */
 	protected function trace_contains( $haystack = array() ) {
-		$trace = debug_backtrace();
+		$trace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
 		foreach ( $trace as $id => $frame ) {
 			if ( in_array( $frame[ 'function' ], $haystack ) ) {
 				return true;
