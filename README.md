@@ -3,8 +3,8 @@
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY  
 **Tags:** woocommerce, cart, expire  
 **Requires at least:** 4.0  
-**Tested up to:** 5.7  
-**Stable tag:** 3.40  
+**Tested up to:** 5.8.1  
+**Stable tag:** 3.50  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -71,6 +71,10 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 ## Changelog ##
+### 3.50 ###
+* Add support for removing products from composites/containers (Thanks photogenic89)
+* Major speed increase for busy sites
+
 ### 3.40 ###
 * Reduce time between checking stock and saving sessions (race condition between people adding same item to cart)
 * Removed support for WooCommerce < 3.00
