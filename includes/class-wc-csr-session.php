@@ -24,6 +24,13 @@ class WC_CSR_Session extends WC_Session {
 	private $_table;
 
 	/**
+	 * Unserialized Session Data.
+	 *
+	 * @var array $_unserialized_data Data array.
+	 */
+	private $_unserialized_data;
+
+	/**
 	 * Constructor for the session class.
 	 */
 	public function __construct( $customer_id = null, $data = null, $expiry = null ) {
@@ -59,4 +66,22 @@ class WC_CSR_Session extends WC_Session {
 		return WC_Cache_Helper::get_cache_prefix( WC_SESSION_CACHE_GROUP );
 	}
 
+	/**
+	 * Get a session variable, but only unserialize it once
+	 *
+	 * @param string $key Key to get.
+	 * @param mixed  $default used if the session variable isn't set.
+	 * @return array|string value of session variable
+	 */
+	public function get( $key, $default = null ) {
+		$key = sanitize_key( $key );
+		if ( isset( $this->_unserialized_data[ $key ] ) ) {
+			$value = $this->_unserialized_data[ $key ];
+		} elseif ( isset( $this->_data[ $key ] ) ) {
+			$value = $this->_unserialized_data[ $key ] = maybe_unserialize( $this->_data[ $key ] );
+		} else {
+			$value = $default;
+		}
+		return $value;
+	}
 }
