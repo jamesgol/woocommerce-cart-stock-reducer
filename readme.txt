@@ -1,7 +1,7 @@
 === WooCommerce Cart Stock Reducer ===
 Contributors: jamesgol
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY
-Tags: woocommerce, cart, expire
+Tags: woocommerce, cart, expire, countdown, stock
 Requires at least: 4.0
 Tested up to: 5.8.1
 Stable tag: 3.50
