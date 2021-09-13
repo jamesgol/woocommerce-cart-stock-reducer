@@ -35,9 +35,17 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->expire_time         = $this->get_option( 'expire_time' );
 		$this->ignore_status       = $this->get_option( 'ignore_status', array() );
 
+		// When to refresh all items
+		$this->refresh_items_add          = $this->get_option( 'refresh_items_add', 'no' );
+		$this->refresh_items_cart         = $this->get_option( 'refresh_items_cart', 'no' );
+		$this->refresh_items_checkout     = $this->get_option( 'refresh_items_checkout', 'no' );
+		$this->refresh_items_checkout_pay = $this->get_option( 'refresh_items_checkout_pay', 'no' );
+
+
 		// Actions/Filters to setup WC_Integration elements
 		add_action( 'woocommerce_update_options_integration_' .  $this->id, array( $this, 'process_admin_options' ) );
 		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
+		add_action( 'wp', array( $this, 'check_refresh_items' ) );
 
 		// @todo Add admin interface validation/sanitation
 
@@ -99,6 +107,22 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		require_once 'class-wc-csr-session.php';
 		require_once 'class-wc-csr-sessions.php';
 		$this->sessions = new WC_CSR_Sessions( $this );
+	}
+
+	public function check_refresh_items() {
+		$refresh = false;
+
+		if ( is_cart() && 'yes' === $this->refresh_items_cart ) {
+			$refresh = true;
+		} elseif ( is_checkout() && 'yes' === $this->refresh_items_checkout ) {
+			$refresh = true;
+		} elseif ( is_checkout_pay_page() && 'yes' === $this->refresh_items_checkout_pay ) {
+			$refresh = true;
+		}
+		$refresh = apply_filters( 'wc_csr_check_refresh_items', $refresh, $this );
+		if ( true === $refresh ) {
+			$this->adjust_cart_expiration();
+		}
 	}
 
 	public function woocommerce_post_class( $classes, $product ) {
@@ -358,6 +382,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @param $cart_item_data
 	 */
 	public function add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
+
+		if ( 'yes' === $this->refresh_items_add ) {
+			// If enabled, refresh all cart items when a new item is added
+			$this->adjust_cart_expiration();
+		}
+
 		// Force save asap instead of at shutdown
 		WC()->session->save_data();
 		$this->sessions->remove_cache_item( $product_id, $variation_id );
@@ -1062,6 +1092,30 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				'options'           => wc_get_order_statuses(),
 				'description'       => __( '(Advanced Setting) WooCommerce order status that prohibit expiring items from cart', 'woocommerce-cart-stock-reducer' ),
 			),
+			'refresh_items_add' => array(
+				'title'             => __( 'Refresh Item Expiration Time', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'checkbox',
+				'label'             => __( 'Refresh all items expiration time, when items are added to cart', 'woocommerce-cart-stock-reducer' ),
+				'default'           => 'no',
+			),
+			'refresh_items_cart' => array(
+				'type'              => 'checkbox',
+				'label'             => __( 'Refresh all items expiration time, when cart page is loaded', 'woocommerce-cart-stock-reducer' ),
+				'default'           => 'no',
+			),
+			'refresh_items_checkout' => array(
+				'type'              => 'checkbox',
+				'label'             => __( 'Refresh all items expiration time, when checkout page is loaded', 'woocommerce-cart-stock-reducer' ),
+				'default'           => 'no',
+			),
+			'refresh_items_checkout_pay' => array(
+				'type'              => 'checkbox',
+				'label'             => __( 'Refresh all items expiration time, when checkout payment page is loaded', 'woocommerce-cart-stock-reducer' ),
+				'default'           => 'no',
+			),
+
+
+
 		);
 	}
 
