@@ -71,6 +71,9 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= Dev =
+* Use WordPress object cache if enabled (Another major speed boost)
+
 = 3.50 =
 * Add support for removing products from composites/containers (Thanks photogenic89)
 * Major speed increase for busy sites
