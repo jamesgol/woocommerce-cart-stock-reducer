@@ -18,6 +18,10 @@ class WC_CSR_Sessions  {
 
 	private $sessions_loaded = false;
 
+	private $cache_prefix = 'carts_with_item';
+
+	private $cache_group = 'WC-CSR';
+
 	public function __construct( $csr = null ) {
 		$this->csr = $csr;
 
@@ -29,15 +33,81 @@ class WC_CSR_Sessions  {
 		}
 		add_filter( 'manage_product_posts_columns', array( $this, 'product_columns' ), 11, 1 );
 		add_action( 'manage_product_posts_custom_column', array( $this, 'render_product_columns' ), 11, 1 );
+
+		/*
+		 *  Caching the results of the inventory counts is easy, but ensuring the counts are accurate through all
+		 *  of the many places the carts can be adjusted is hard.
+		 *
+		 */
+		add_action( 'woocommerce_remove_cart_item', array( $this, 'woocommerce_remove_cart_item' ), 10, 2 );
+		add_action( 'woocommerce_after_cart_item_quantity_update', array( $this, 'woocommerce_update_cart_item_quantity'), 10, 4);
+		add_action( 'woocommerce_before_cart_emptied', array( $this, 'woocommerce_before_cart_emptied' ), 10, 1 );
+		add_action( 'woocommerce_updated_product_stock', array( $this, 'woocommerce_updated_product_stock' ), 10, 1 );
+		add_action( 'woocommerce_ajax_order_items_removed', array( $this, 'woocommerce_ajax_order_items_removed' ), 10, 4 );
+		add_action( 'woocommerce_variation_before_set_stock', array( $this, 'woocommerce_variation_before_set_stock' ), 10, 1 );
+		add_action( 'woocommerce_product_before_set_stock', array( $this, 'woocommerce_product_before_set_stock' ), 10, 1 );
+		add_filter( 'woocommerce_prevent_adjust_line_item_product_stock', array( $this, 'woocommerce_prevent_adjust_line_item_product_stock' ), 10, 3 );
+
 	}
 
-	/**
-	 * Gets a cache prefix. This is used in session names so the entire cache can be invalidated with 1 function call.
-	 *
-	 * @return string
-	 */
-	private function get_cache_prefix() {
-		return WC_Cache_Helper::get_cache_prefix( WC_SESSION_CACHE_GROUP );
+	public function woocommerce_prevent_adjust_line_item_product_stock( $value, $item, $item_quantity ) {
+		if ( is_callable( array( $item, 'get_product' ) ) ) {
+			$product = $item->get_product();
+			$this->remove_cache_item( $product->get_id() );
+		}
+
+		return $value;
+	}
+
+	public function woocommerce_product_before_set_stock( $product ) {
+		if ( is_callable( array( $product, 'get_id' ) ) ) {
+			$this->remove_cache_item( $product->get_id() );
+		}
+	}
+
+	public function woocommerce_variation_before_set_stock( $product ) {
+		if ( is_callable( array( $product, 'get_id' ) ) ) {
+			$this->remove_cache_item( $product->get_id() );
+		}
+	}
+
+	public function woocommerce_updated_product_stock( $product_id_with_stock = null ) {
+		if ( null !== $product_id_with_stock ) {
+			$this->remove_cache_item( $product_id_with_stock );
+		}
+	}
+
+	public function woocommerce_before_cart_emptied( $clear_persistent_cart ) {
+		$cart = WC()->cart->get_cart();
+		foreach ( $cart as $cart_item_key => $values ) {
+			if ( !empty( $values['product_id'] ) ) {
+				$this->remove_cache_item( $values['product_id'] );
+			}
+			if ( !empty( $values['variation_id'] ) ) {
+				$this->remove_cache_item( $values['variation_id'] );
+			}
+		}
+	}
+
+	public function woocommerce_update_cart_item_quantity( $cart_item_key, $quantity, $old_quantity, $cart ) {
+		$this->remove_cache_item_by_key( $cart_item_key, $cart );
+	}
+
+	public function woocommerce_remove_cart_item( $cart_item_key, $cart ) {
+		$this->remove_cache_item_by_key( $cart_item_key, $cart );
+	}
+
+	public function remove_cache_item_by_key( $cart_item_key, $cart ) {
+		if ( isset( $cart_item_key, $cart, $cart->cart_contents[ $cart_item_key ] ) ) {
+			$item = $cart->cart_contents[ $cart_item_key ];
+			$this->remove_cache_item( $item['product_id'], $item['variation_id'] );
+		}
+	}
+
+	public function remove_cache_item() {
+		foreach ( func_get_args() as $item ) {
+			wp_cache_delete( $this->get_cache_key( $item ), $this->cache_group );
+		}
 	}
 
 	protected function get_all_items_in_carts( $refresh_cache = false ) {
@@ -133,20 +203,48 @@ class WC_CSR_Sessions  {
 		return 0 + $quantity;
 	}
 
+	public function get_cache_key( $item ) {
+		return "{$this->cache_prefix}_$item";
+	}
+
 	public function find_items_in_carts( $item, $use_cache = true ) {
 		$items = array();
 
+		if ( true === $use_cache ) {
+			$cached_items = wp_cache_get( $this->get_cache_key( $item ), $this->cache_group );
+			if ( false !== $cached_items ) {
+				return $cached_items;
+			}
+		}
+
 		$this->get_all_items_in_carts( $use_cache ? false : true );
+
+		if ( isset( $this->csr, $this->csr->expire_time ) ) {
+			// Start with the global expiration time
+			$earliest_expiration_time = strtotime( $this->csr->expire_time );
+		} else {
+			// If no global use 10 minutes
+			$earliest_expiration_time = time() + 600;
+		}
 
 		foreach ( $this->sessions as $session_id => $session ) {
 			if ( $cart = $session->cart ) {
 				foreach ( $session->cart as $cart_id => $cart_item ) {
 					if ( $item === $cart_item['product_id'] || $item === $cart_item['variation_id'] ) {
 						$items[ $session_id ][ $cart_item['key'] ] = $cart_item;
+						if ( isset( $cart_item['csr_expire_time'] ) && time() < $cart_item['csr_expire_time'] && $cart_item['csr_expire_time'] < $earliest_expiration_time ) {
+							// Only cache as long as the earliest expiration time in the future
+							$earliest_expiration_time = $cart_item['csr_expire_time'];
+						}
 					}
 				}
 			}
 		}
+
+		$expiration_in_seconds = absint( time() - $earliest_expiration_time );
+		// Always cache entry even if the function was told not to use the cache
+		wp_cache_set( $this->get_cache_key( $item ), $items, $this->cache_group, $expiration_in_seconds );
+
 		return $items;
 	}
 

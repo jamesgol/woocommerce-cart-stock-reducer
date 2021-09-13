@@ -360,6 +360,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
 		// Force save asap instead of at shutdown
 		WC()->session->save_data();
+		$this->sessions->remove_cache_item( $product_id, $variation_id );
 
 		if ( in_array( $this->expire_countdown, array( 'always', 'addonly') ) ) {
 			$earliest_expiration_time = null;
