@@ -58,12 +58,19 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 			add_filter( 'woocommerce_available_variation', array( $this, 'product_available_variation' ), 10, 3 );
 			add_filter( 'woocommerce_post_class', array( $this, 'woocommerce_post_class' ), 10, 2  );
+
+			add_action( 'woocommerce_checkout_create_order_line_item', array( $this, 'remove_order_line_item_qty_from_transient'), 100, 4);
 		}
 
 		// Actions/Filters related to cart item expiration
 		if ( ! is_admin() || defined( 'DOING_AJAX' ) && ! defined( 'DOING_CRON' ) ) {
 			add_action( 'woocommerce_add_to_cart', array( $this, 'add_to_cart' ), 10, 6 );
 			add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 2 );
+
+			// Transients
+			add_action( 'woocommerce_remove_cart_item', array( $this, 'remove_cart_item'), 10, 2 );
+			add_action( 'woocommerce_after_cart_item_quantity_update', array( $this, 'update_cart_item_quantity'), 10, 4);
+			
 			add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'check_expired_items' ), 10 );
 			add_filter( 'woocommerce_notice_types', array( $this, 'add_countdown_to_notice' ), 10 );
 			add_filter( 'wc_add_to_cart_message_html', array( $this, 'add_to_cart_message' ), 10, 2 );
@@ -174,6 +181,17 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		return $args;
 	}
+
+
+	/**
+	 * Calculate expiration time in seconds for all transients
+	 */
+	public function expiration_time_in_seconds() {
+		$time = 0;
+		if( $this->expire_items  ) $time = strtotime($this->expire_time) - time();
+		return $time; 
+	}
+
 
 	public function expire_notice_added() {
 		if ( true === $this->expiration_notice_added ) {
@@ -387,6 +405,56 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 	}
 
+
+	/**
+	 * Remove qty from transient if item is removed
+	 * This is called when the item expires AND when the item is removed from the cart
+	 * 
+	 * @param int $cart_item_key
+	 * @param array $cart
+	 */
+	public function remove_cart_item( $cart_item_key, $cart  ) {
+		$cart_item = $cart->removed_cart_contents[ $cart_item_key ];
+		$this->reduce_transient_levels( $cart_item, $cart_item['quantity'], $cart_item['product_id'], $cart_item['variation_id']);
+	}
+
+
+	/**
+	 * Remove qty from transient once it is ordered
+	 * 
+	 * @param array $item
+	 * @param int $cart_item_key
+	 * @param array $cart_item
+	 * @param array $order
+	 */
+	public function remove_order_line_item_qty_from_transient( $item, $cart_item_key, $cart_item, $order ) {
+		$this->reduce_transient_levels( $cart_item, $cart_item['quantity'], $cart_item['product_id'], $cart_item['variation_id']);
+	}
+
+
+	/**
+	 * Reduce transient levels
+	 * 
+	 * @param int $qty
+	 * @param int $product_id
+	 * @param int $variation_id
+	 */
+	public function reduce_transient_levels( $cart_item, $qty, $product_id, $variation_id ) {
+
+		$id 		= $variation_id ? $variation_id : $product_id;		
+		$transient  = 'reduced_product_' . $id;
+		$cached_qty = get_transient( $transient );
+		$new_qty 	= $cached_qty - $qty;
+		$expiration	= $this->expiration_time_in_seconds();
+
+		if ( $cached_qty && $new_qty > 0 ) {
+			set_transient( $transient, $new_qty, $expiration );
+		} else {
+			delete_transient( $transient );
+		}
+	}
+
+
 	/**
 	 * Called by 'wc_csr_adjust_cart_expiration' action to adjust the expiration times of the cart
 	 *
@@ -517,7 +585,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function add_cart_item( $item, $key ) {
 		if ( isset( $item[ 'data' ] ) ) {
 			$product = $item[ 'data' ];
-			if ( 'yes' === $this->expire_items && $this->get_item_managing_stock( $product ) ) {
+			if ( 'yes' === $this->expire_items && $product_id = $this->get_item_managing_stock( $product ) ) {
 				$expire_time_text = null;
 				if ( ! empty( $this->expire_time ) ) {
 					// Check global expiration time
@@ -536,11 +604,49 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 					$item[ 'csr_expire_time' ] = apply_filters( 'wc_csr_expire_time', strtotime( $expire_time_text ), $expire_time_text, $item, $key, $this );
 					$item[ 'csr_expire_time_text' ] = $expire_time_text;
 				}
+
+				/*-----------------------------------------*/
+				/* Add or update Transients				   */
+				/*-----------------------------------------*/
+				$qty 	 	= $item['quantity'];
+				$expiration = $this->expiration_time_in_seconds();
+				$transient  = 'reduced_product_' . $product_id;
+				$cached_qty = get_transient( $transient );
+				$new_qty 	= $cached_qty ? $cached_qty + $qty : $qty;
+				set_transient( $transient, $new_qty, $expiration );
 			}
 
 		}
 		return $item;
 	}
+
+
+	/**
+	 * Update transient when cart item quantity is updated
+	 * 
+	 * @param int $cart_item_key
+	 * @param int $quantity,
+	 * @param int $old_quantity
+	 * @param array $cart
+	 */
+	public function update_cart_item_quantity( $cart_item_key, $quantity, $old_quantity, $cart ) {
+
+		$product 		= $cart->cart_contents[ $cart_item_key ]['data'];
+		$id 			= $this->get_item_managing_stock( $product );
+		$expiration 	= $this->expiration_time_in_seconds();
+		$transient_name = 'reduced_product_' . $id;
+		$transient 		= get_transient( $transient_name );
+		$difference 	= abs($quantity - $old_quantity);
+
+		if ( $transient && $quantity >= $old_quantity ) {
+			set_transient( $transient_name, $transient + $difference, $expiration );
+		} else if ( $transient && $quantity < $old_quantity ) {
+			set_transient( $transient_name, $transient - $difference, $expiration );
+		} else {
+			set_transient( $transient_name, $quantity, $expiration );
+		}
+	}
+
 
 	/**
 	 * Called by the 'wc_add_to_cart_message' filter to append an internal message
@@ -804,7 +910,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		$stock = $product->get_stock_quantity();
 
-		if ( $stock > 0 && $this->virtual_depth <= 1 ) {
+		if ( !is_admin() && $stock > 0 && $this->virtual_depth <= 1 ) {
 		    $product_field = $this->get_field_managing_stock( $product );
 
 			// The minimum quantity of stock to have in order to skip checking carts.  This should be higher than the amount you expect could sell before the carts expire.
@@ -817,10 +923,20 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				return $stock;
 			}
 
-			$in_carts = $this->sessions->quantity_in_carts( $id, $product_field, $ignore, $use_cache );
-			if ( 0 < $in_carts ) {
-				$stock = ( $stock - $in_carts );
+			/*-----------------------------------------*/
+			/* Remove what is already in carts	   	   */
+			/*-----------------------------------------*/
+
+			$in_carts 	   	  = get_transient('reduced_product_' . $id );
+			$this_cart_qty    = 0;
+			
+			if( is_callable(array(WC()->cart, 'get_cart_item_quantities')) ){
+				if( $product_qty_in_cart = WC()->cart->get_cart_item_quantities() ) {
+					if( isset($product_qty_in_cart[$id]) ) $this_cart_qty += $product_qty_in_cart[$id];
+				}
 			}
+
+			if( $in_carts ) $stock -= ($in_carts - $this_cart_qty);
 		} else {
 			// Item is actually not in stock, returning null keeps us from trying to handle the product
 			$stock = null;
