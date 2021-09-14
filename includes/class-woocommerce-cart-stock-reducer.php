@@ -32,6 +32,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->stock_pending_include_cart_items = $this->get_option( 'stock_pending_include_cart_items' );
 		$this->expire_items        = $this->get_option( 'expire_items' );
 		$this->expire_countdown    = $this->get_option( 'expire_countdown' );
+		$this->expire_categories   = $this->get_option( 'expire_categories', null );
 		$this->expire_time         = $this->get_option( 'expire_time' );
 		$this->ignore_status       = $this->get_option( 'ignore_status', array() );
 
@@ -547,7 +548,20 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function add_cart_item( $item, $key ) {
 		if ( isset( $item[ 'data' ] ) ) {
 			$product = $item[ 'data' ];
-			if ( 'yes' === $this->expire_items && $this->get_item_managing_stock( $product ) ) {
+			if ( 'yes' === $this->expire_items && $managing_item = $this->get_item_managing_stock( $product ) ) {
+				if ( !empty( $this->expire_categories ) ) {
+					if ( is_a( $product, 'WC_Product_Variation' ) ) {
+						// Variations don't have terms so we need to look at the parent
+						$managing_item = $product->get_parent_id();
+					}
+
+					// Check if terms are set and they match
+					$cats = apply_filters( 'wc_csr_expire_categories', explode(',', $this->expire_categories ), $managing_item, $item, $key );
+					if ( ! has_term( $cats, 'product_cat', $managing_item ) ) {
+						// If the product doesn't have the required terms then don't add expiration time
+						return $item;
+					}
+				}
 				$expire_time_text = null;
 				if ( ! empty( $this->expire_time ) ) {
 					// Check global expiration time
@@ -1084,6 +1098,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 											  'addonly' => __( 'Only when items are added', 'woocommerce-cart-stock-reducer' ),
 											  'never' => __( 'Never', 'woocommerce-cart-stock-reducer' ) ),
 				'description'       => __( 'When to display a countdown to expiration', 'woocommerce-cart-stock-reducer' ),
+			),
+			'expire_categories' => array(
+				'title'             => __( 'Expire Categories', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'text',
+				'description'       => __( 'Comma separated list of WordPress categories to select items that will expire.  Empty means all items will expire. ', 'woocommerce-cart-stock-reducer' ),
+				'desc_tip'          => false,
+				'default'           => ''
 			),
 			'ignore_status' => array(
 				'title'             => __( 'Ignore Order Status', 'woocommerce-cart-stock-reducer' ),

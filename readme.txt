@@ -74,6 +74,7 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 = Dev =
 * Use WordPress object cache if enabled (Another major speed boost)
 * Add configurable setting to refresh expiration time of cart items when new items are added, viewing cart, viewing checkout, or viewing checkout payment page
+* Allow categories to be used to specify which items to expire from carts
 
 = 3.50 =
 * Add support for removing products from composites/containers (Thanks photogenic89)
