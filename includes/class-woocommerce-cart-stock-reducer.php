@@ -208,8 +208,8 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		foreach ( wc_get_notices() as $type => $notices ) {
 			foreach ( $notices as $notice ) {
 				if ( is_array( $notice ) ) {
-				    // WooCommerce 3.9.1 changed the notices to be an array instead of string
-				    $notice = $notice['notice'];
+					// WooCommerce 3.9.1 changed the notices to be an array instead of string
+					$notice = $notice['notice'];
 				}
 				if ( false !== strpos( $notice, 'wc-csr-countdown' ) ) {
 					$this->expiration_notice_added = true;
@@ -482,11 +482,11 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function product_available_variation( $var, $product, $variation ) {
 		$field = $this->get_field_managing_stock( $variation );
 		if ( 'product_id' === $field ) {
-		    // Stock is managed by main item ID
+			// Stock is managed by main item ID
 			$max_qty = $this->get_virtual_stock_available( $product, false );
 		} else {
 			$max_qty = $this->get_virtual_stock_available( $variation, false );
-        }
+		}
 
 		if ( $max_qty >= 0 ) {
 			// Use the lowest of the max_qty, in case another plugin is reducing this number
@@ -612,7 +612,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return bool true if quantity change to cart is valid
 	 */
 	public function update_cart_validation( $valid, $cart_item_key, $values, $quantity ) {
-        $product = $values['data'];
+		$product = $values['data'];
 		$available = $this->get_virtual_stock_available( $product, true, false );
 		if ( is_numeric( $available ) && $available < $quantity ) {
 			wc_add_notice( __( 'Quantity requested not available', 'woocommerce-cart-stock-reducer' ), 'error' );
@@ -635,7 +635,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( $item = $this->get_item_managing_stock( null, $product_id, $variation_id ) ) {
 			$product = wc_get_product( $item );
 			$backorders_allowed = $product->backorders_allowed();
-		    $stock = $product->get_stock_quantity( 'edit' );
+			$stock = $product->get_stock_quantity( 'edit' );
 			$available = $this->get_virtual_stock_available( $product, false, false );
 
 			if ( true === $backorders_allowed ) {
@@ -659,7 +659,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 	/**
 	 * Determine which item is in control of managing the inventory
-     * @param object $product
+	 * @param object $product
 	 * @param int $product_id
 	 * @param int $variation_id
 	 *
@@ -668,28 +668,28 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function get_item_managing_stock( $product = null, $product_id = null, $variation_id = null ) {
 		$id = false;
 
-        if ( !empty( $product ) ) {
-            $managing_stock = $product->managing_stock();
-            if ( 'parent' === $managing_stock ) {
-                $id = $product->get_parent_id();
-            } elseif ( true === $managing_stock ) {
-                $id = $product->get_id();
-            }
-        } elseif ( ! empty( $variation_id ) ) {
-            // First check variation
-            $product        = wc_get_product( $variation_id );
-            $managing_stock = $product->managing_stock();
-            if ( 'parent' === $managing_stock ) {
-                $id = $product->get_parent_id();
-            } elseif ( true === $managing_stock ) {
-                $id = $product->get_id();
-            }
-        } else {
-            $product = wc_get_product( $product_id );
-            if ( true === $product->managing_stock() ) {
-                $id = $product->get_id();
-            }
-        }
+		if ( !empty( $product ) ) {
+			$managing_stock = $product->managing_stock();
+			if ( 'parent' === $managing_stock ) {
+				$id = $product->get_parent_id();
+			} elseif ( true === $managing_stock ) {
+				$id = $product->get_id();
+			}
+		} elseif ( ! empty( $variation_id ) ) {
+			// First check variation
+			$product        = wc_get_product( $variation_id );
+			$managing_stock = $product->managing_stock();
+			if ( 'parent' === $managing_stock ) {
+				$id = $product->get_parent_id();
+			} elseif ( true === $managing_stock ) {
+				$id = $product->get_id();
+			}
+		} else {
+			$product = wc_get_product( $product_id );
+			if ( true === $product->managing_stock() ) {
+				$id = $product->get_id();
+			}
+		}
 
 		return $id;
 	}
@@ -849,7 +849,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$stock = $product->get_stock_quantity();
 
 		if ( $stock > 0 && $this->virtual_depth <= 1 ) {
-		    $product_field = $this->get_field_managing_stock( $product );
+			$product_field = $this->get_field_managing_stock( $product );
 
 			// The minimum quantity of stock to have in order to skip checking carts.  This should be higher than the amount you expect could sell before the carts expire.
 			// Originally was a configuration variable, but this is such an advanced option I thought it would be better as a filter.
