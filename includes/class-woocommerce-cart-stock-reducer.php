@@ -51,23 +51,22 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		// @todo Add admin interface validation/sanitation
 
 		// Filters related to stock quantity
-		if ( 'yes' === $this->cart_stock_reducer ) {
-			add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
-			add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
-			add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
-			add_filter( 'wc_csr_stock_pending_text', array( $this, 'replace_stock_pending_text' ), 10, 3 );
-			add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
-			add_filter( 'woocommerce_get_undo_url', array( $this, 'get_undo_url' ), 10, 2 );
-			add_filter( 'woocommerce_product_variation_get_stock_quantity', array( $this, 'product_get_stock_quantity' ), 10, 2 );
-			add_filter( 'woocommerce_product_get_stock_quantity', array( $this, 'product_get_stock_quantity' ), 10, 2 );
-			add_filter( 'woocommerce_product_variation_get_stock_status', array( $this, 'product_get_stock_status' ), 10, 2 );
-			add_filter( 'woocommerce_product_get_stock_status', array( $this, 'product_get_stock_status' ), 10, 2 );
-			add_filter( 'woocommerce_get_availability_class', array( $this, 'get_availability_class' ), 10, 2 );
-			add_filter( 'woocommerce_get_availability_text', array( $this, 'get_availability_text' ), 10, 2 );
+		add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
+		add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
+		add_filter( 'woocommerce_quantity_input_args', array( $this, 'quantity_input_args' ), 10, 2 );
+		add_filter( 'wc_csr_stock_pending_text', array( $this, 'replace_stock_pending_text' ), 10, 3 );
+		add_action( 'wc_csr_adjust_cart_expiration', array( $this, 'adjust_cart_expiration' ), 10, 2 );
+		add_filter( 'woocommerce_get_undo_url', array( $this, 'get_undo_url' ), 10, 2 );
+		add_filter( 'woocommerce_product_variation_get_stock_quantity', array( $this, 'product_get_stock_quantity' ), 10, 2 );
+		add_filter( 'woocommerce_product_get_stock_quantity', array( $this, 'product_get_stock_quantity' ), 10, 2 );
+		add_filter( 'woocommerce_product_variation_get_stock_status', array( $this, 'product_get_stock_status' ), 10, 2 );
+		add_filter( 'woocommerce_product_get_stock_status', array( $this, 'product_get_stock_status' ), 10, 2 );
+		add_filter( 'woocommerce_get_availability_class', array( $this, 'get_availability_class' ), 10, 2 );
+		add_filter( 'woocommerce_get_availability_text', array( $this, 'get_availability_text' ), 10, 2 );
 
-			add_filter( 'woocommerce_available_variation', array( $this, 'product_available_variation' ), 10, 3 );
-			add_filter( 'woocommerce_post_class', array( $this, 'woocommerce_post_class' ), 10, 2  );
-		}
+		add_filter( 'woocommerce_available_variation', array( $this, 'product_available_variation' ), 10, 3 );
+		add_filter( 'woocommerce_post_class', array( $this, 'woocommerce_post_class' ), 10, 2  );
+
 
 		// Actions/Filters related to cart item expiration
 		if ( ! is_admin() || defined( 'DOING_AJAX' ) && ! defined( 'DOING_CRON' ) ) {
@@ -127,6 +126,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	public function woocommerce_post_class( $classes, $product ) {
+		if ( ! $this->is_reducer_enabled( $product ) ) {
+			return $classes;
+		}
+
 		$actual_stock = $this->get_actual_stock_available( $product );
 
 		if ( $actual_stock > 0 ) {
@@ -184,6 +187,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return array
 	 */
 	public function quantity_input_args( $args, $product ) {
+		if ( ! $this->is_reducer_enabled( $product ) ) {
+			return $args;
+		}
 		if ( 'quantity' === $args[ 'input_name' ] ) {
 			$ignore = false;
 		} else {
@@ -283,6 +289,12 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->expire_items();
 	}
 
+	public function is_reducer_enabled( $product = null ) {
+		if ( 'yes' === $this->cart_stock_reducer ) {
+			return true;
+		}
+		return false;
+	}
 
 	/**
 	 * Expire items and returns the soonest time an item expires
@@ -480,6 +492,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 *
 	 */
 	public function product_available_variation( $var, $product, $variation ) {
+		if ( ! $this->is_reducer_enabled( $product ) ) {
+			return $var;
+		}
+
 		$field = $this->get_field_managing_stock( $variation );
 		if ( 'product_id' === $field ) {
 			// Stock is managed by main item ID
@@ -613,6 +629,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 */
 	public function update_cart_validation( $valid, $cart_item_key, $values, $quantity ) {
 		$product = $values['data'];
+		if ( ! $this->is_reducer_enabled( $product ) ) {
+			return $valid;
+		}
 		$available = $this->get_virtual_stock_available( $product, true, false );
 		if ( is_numeric( $available ) && $available < $quantity ) {
 			wc_add_notice( __( 'Quantity requested not available', 'woocommerce-cart-stock-reducer' ), 'error' );
@@ -632,6 +651,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	 * @return bool true if addition to cart is valid
 	 */
 	public function add_cart_validation( $valid, $product_id, $quantity, $variation_id = null, $variations = array() ) {
+		if ( ! $this->is_reducer_enabled( $product_id ) ) {
+			return $valid;
+		}
 		if ( $item = $this->get_item_managing_stock( null, $product_id, $variation_id ) ) {
 			$product = wc_get_product( $item );
 			$backorders_allowed = $product->backorders_allowed();
@@ -718,6 +740,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	public function get_availability_text( $text, $product ) {
+		if ( ! $this->is_reducer_enabled( $product ) ) {
+			return $text;
+		}
+
 		$stock = $this->get_virtual_stock_available( $product );
 		if ( isset( $stock ) && $stock <= 0 ) {
 			if ( $product->backorders_allowed() ) {
@@ -738,6 +764,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	public function get_availability_class( $class, $product ) {
+		if ( ! $this->is_reducer_enabled( $product ) ) {
+			return $class;
+		}
+
 		$stock = $this->get_virtual_stock_available( $product );
 
 		if ( isset( $stock ) && $stock <= 0 ) {
@@ -892,6 +922,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 
 	public function product_get_stock_status( $status, $product ) {
+		if ( ! $this->is_reducer_enabled( $product ) ) {
+			return $status;
+		}
+
 		if ( is_cart() || is_checkout() ) {
 			$ignore = true;
 		} else {
@@ -918,6 +952,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	}
 
 	public function product_get_stock_quantity( $quantity, $product ) {
+		if ( ! $this->is_reducer_enabled( $product ) ) {
+			return $quantity;
+		}
+
 		if ( false === $this->checking_virtual_stock ) {
 			$never_virtual_whitelist = array( 'wc_reduce_stock_levels', 'render_product_columns', 'validate_props', 'render_is_in_stock_column' );
 			if ( $this->trace_contains( apply_filters( 'wc_csr_whitelist_get_stock_quantity', $never_virtual_whitelist, $quantity, $product ) ) ) {
