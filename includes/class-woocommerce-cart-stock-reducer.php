@@ -422,7 +422,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				return true;
 			}
 		}
-		// @TODO Lookup cats
+		if ( !empty( $this->expire_categories ) ) {
+			// Categories can override anything but the global setting 'never'
+			$cats = apply_filters( 'wc_csr_expire_categories', explode(',', $this->expire_categories ), $product_id );
+			if ( has_term( $cats, 'product_cat', $product_id ) ) {
+				return true;
+			}
+		}
 		if ( 'all' === $this->expire_items ) {
 			return true;
 		} elseif ( 'yes' === $this->expire_items && $this->get_item_managing_stock( $product ) ) {
@@ -700,20 +706,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		if ( isset( $item[ 'data' ] ) ) {
 			$product = $item[ 'data' ];
 			if ( $this->is_expiration_enabled( $product ) && $managing_item = $this->get_item_managing_stock( $product ) ) {
-				if ( !empty( $this->expire_categories ) ) {
-				    // @TODO Move this to is_expiration_enabled()
-					if ( is_a( $product, 'WC_Product_Variation' ) ) {
-						// Variations don't have terms so we need to look at the parent
-						$managing_item = $product->get_parent_id();
-					}
-
-					// Check if terms are set and they match
-					$cats = apply_filters( 'wc_csr_expire_categories', explode(',', $this->expire_categories ), $managing_item, $item, $key );
-					if ( ! has_term( $cats, 'product_cat', $managing_item ) ) {
-						// If the product doesn't have the required terms then don't add expiration time
-						return $item;
-					}
-				}
 				$expire_time_text = null;
 				if ( ! empty( $this->expire_time ) ) {
 					// Check global expiration time
