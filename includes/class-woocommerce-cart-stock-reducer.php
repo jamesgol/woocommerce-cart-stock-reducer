@@ -50,6 +50,10 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		// @todo Add admin interface validation/sanitation
 
+		// Hooks for handling backend per-product settings
+		add_action( 'woocommerce_product_options_inventory_product_data', array( $this, 'woocommerce_product_options_inventory_product_data' ) );
+		add_action( 'woocommerce_admin_process_product_object', array( $this, 'woocommerce_admin_process_product_object' ), 10, 1 );
+
 		// Filters related to stock quantity
 		add_filter( 'woocommerce_update_cart_validation', array( $this, 'update_cart_validation' ), 10, 4 );
 		add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'add_cart_validation' ), 10, 5 );
@@ -107,6 +111,79 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		require_once 'class-wc-csr-session.php';
 		require_once 'class-wc-csr-sessions.php';
 		$this->sessions = new WC_CSR_Sessions( $this );
+	}
+
+	public function woocommerce_admin_process_product_object( $product ) {
+		if ( isset( $_POST['_csr_reducer_mode' ] ) && in_array( $_POST['_csr_reducer_mode'], array( 'default', 'always', 'never' ) ) ) {
+			update_post_meta( $product->get_id(), '_csr_reducer_mode', $_POST['_csr_reducer_mode'] );
+		}
+		if ( isset( $_POST['_csr_expire_mode' ] ) && in_array( $_POST['_csr_expire_mode'], array( 'default', 'always', 'never' ) ) ) {
+			update_post_meta( $product->get_id(), '_csr_expire_mode', $_POST['_csr_expire_mode'] );
+		}
+		if ( isset( $_POST['_csr_expire_custom_time' ] )  ) {
+			$expire_time = sanitize_text_field( $_POST['_csr_expire_custom_time'] );
+			$expire_custom_key = apply_filters( 'wc_csr_expire_custom_key', 'csr_expire_time', $product, null );
+			update_post_meta( $product->get_id(), $expire_custom_key, $expire_time );
+		}
+
+	}
+
+	public function woocommerce_product_options_inventory_product_data() {
+		global $product_object;
+
+		if ( in_array( $this->cart_stock_reducer, array( 'yes', 'no' ) ) ) {
+		    // Only display field if it is possible to override
+			woocommerce_wp_select(
+				array(
+					'id'          => '_csr_reducer_mode',
+					'value'       => get_post_meta( $product_object->get_id(), '_csr_reducer_mode', true ),
+					'label'       => __( 'Cart Stock Reducer', 'woocommerce-cart-stock-reducer' ),
+					'options'     => array(
+						'default' => __( 'Store-wide default', 'woocommerce-cart-stock-reducer' ),
+						'always'  => __( 'Always reduce stock', 'woocommerce-cart-stock-reducer' ),
+						'never'   => __( 'Never reduce stock', 'woocommerce-cart-stock-reducer' ),
+					),
+					'desc_tip'    => true,
+					'description' => __( 'Override default Cart Stock Reducer mode.', 'woocommerce-cart-stock-reducer' ),
+				)
+			);
+		}
+
+		if ( in_array( $this->expire_items, array( 'no', 'yes', 'all' ) ) ) {
+			// Only display field if it is possible to override
+			woocommerce_wp_select(
+				array(
+					'id'          => '_csr_expire_mode',
+					'value'       => get_post_meta( $product_object->get_id(), '_csr_expire_mode', true ),
+					'label'       => __( 'Cart Stock Expiration', 'woocommerce-cart-stock-reducer' ),
+					'options'     => array(
+						'default' => __( 'Store-wide default', 'woocommerce-cart-stock-reducer' ),
+						'always'  => __( 'Always expire item ', 'woocommerce-cart-stock-reducer' ),
+						'never'   => __( 'Never expire item', 'woocommerce-cart-stock-reducer' ),
+					),
+					'desc_tip'    => true,
+					'description' => __( 'override default Card Stock Reducer expiration mode.', 'woocommerce-cart-stock-reducer' ),
+				)
+			);
+
+
+			$expire_custom_key = apply_filters( 'wc_csr_expire_custom_key', 'csr_expire_time', $product_object, null );
+
+			woocommerce_wp_text_input(
+				array(
+					'id'                => '_csr_expire_custom_time',
+					'value'             => get_post_meta( $product_object->get_id(), $expire_custom_key, true ),
+					'label'             => __( 'Expiration Time Override', 'woocommerce-cart-stock-reducer' ),
+					'desc_tip'          => true,
+					'description'       => sprintf( __( 'Override the default cart expiration time (default is \'%s\')', 'woocommerce-cart-stock-reducer' ), $this->expire_time ),
+					'type'              => 'text',
+					'custom_attributes' => array(
+						'step' => 'any',
+					),
+				)
+			);
+		}
+
 	}
 
 	public function check_refresh_items() {
@@ -289,8 +366,66 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		$this->expire_items();
 	}
 
+	public function get_product_parent_id( $product ) {
+		$product_id = null;
+		if ( is_a( $product, 'WC_Product' ) ) {
+			if ( is_a( $product, 'WC_Product_Variation' ) ) {
+				$product_id = $product->get_parent_id();
+			} else {
+				$product_id = $product->get_id();
+			}
+		} elseif ( is_numeric( $product ) ) {
+			$product_id = $product;
+		} elseif ( is_array( $product ) && isset( $product['product_id'] ) ) {
+			$product_id = $product['product_id'];
+		}
+		return $product_id;
+	}
+
 	public function is_reducer_enabled( $product = null ) {
+		if ( 'never' === $this->cart_stock_reducer ) {
+			// Never cannot be overridden so return quickly
+			return false;
+		}
+		// Check for product override
+		$product_id = $this->get_product_parent_id( $product );
+		if ( $product_id ) {
+			$override = get_post_meta( $product_id, '_csr_reducer_mode', true );
+			if ( 'never' === $override ) {
+				return false;
+			} elseif ( 'always' === $override ) {
+				return true;
+			}
+		}
+		// @TODO Lookup cats
 		if ( 'yes' === $this->cart_stock_reducer ) {
+			return true;
+		}
+		return false;
+	}
+
+	public function is_expiration_enabled( $product = null ) {
+		if ( 'never' === $this->expire_items ) {
+			// Never cannot be overridden so return quickly
+			return false;
+		}
+		if ( is_array( $product ) && isset( $product['data'] ) ) {
+			$product = $product['data'];
+		}
+		// Check for product override
+		$product_id = $this->get_product_parent_id( $product );
+		if ( $product_id ) {
+			$override = get_post_meta( $product_id, '_csr_expire_mode', true );
+			if ( 'never' === $override ) {
+				return false;
+			} elseif ( 'always' === $override ) {
+				return true;
+			}
+		}
+		// @TODO Lookup cats
+		if ( 'all' === $this->expire_items ) {
+			return true;
+		} elseif ( 'yes' === $this->expire_items && $this->get_item_managing_stock( $product ) ) {
 			return true;
 		}
 		return false;
@@ -344,7 +479,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 			// If the cart items do not exist do not try to remove them.
 			return;
 		}
-		if ( 'yes' === $this->expire_items ) {
+		if ( $this->is_expiration_enabled( $cart->cart_contents[ $cart_id ] ) ) {
 			// remove whole container, not only one product inside
 			$container = false;
 			if ( function_exists('wc_pb_get_bundled_cart_item_container') ) {
@@ -564,8 +699,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function add_cart_item( $item, $key ) {
 		if ( isset( $item[ 'data' ] ) ) {
 			$product = $item[ 'data' ];
-			if ( 'yes' === $this->expire_items && $managing_item = $this->get_item_managing_stock( $product ) ) {
+			if ( $this->is_expiration_enabled( $product ) && $managing_item = $this->get_item_managing_stock( $product ) ) {
 				if ( !empty( $this->expire_categories ) ) {
+				    // @TODO Move this to is_expiration_enabled()
 					if ( is_a( $product, 'WC_Product_Variation' ) ) {
 						// Variations don't have terms so we need to look at the parent
 						$managing_item = $product->get_parent_id();
@@ -1085,11 +1221,59 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'cart_stock_reducer' => array(
-				'title'             => __( 'Cart Stock Reducer', 'woocommerce-cart-stock-reducer' ),
-				'type'              => 'checkbox',
-				'label'             => __( 'Enable Cart Stock Reducer', 'woocommerce-cart-stock-reducer' ),
+				'title'             => __( 'Which Items to Reduce Stock', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'select',
 				'default'           => 'yes',
-				'description'       => __( 'If checked, stock quantity will be reduced when items are added to cart.', 'woocommerce-cart-stock-reducer' ),
+				'options'           => array(
+					'yes' => __( 'All Managed Items', 'woocommerce-cart-stock-reducer' ),
+					'no' => __( 'Do not reduce stock of items (Can be overridden per item)', 'woocommerce-cart-stock-reducer' ),
+					'never' => __( 'Never reduce stock (Cannot be overridden per item)', 'woocommerce-cart-stock-reducer' ),),
+			),
+			// @TODO I want to hide the following unless 'no' is selected above
+			'reducer_categories' => array(
+				'title'             => __( 'Reducer Categories', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'text',
+				'description'       => __( 'Comma separated list of WordPress categories to select items that will be reduced.  Empty means follow system default. ', 'woocommerce-cart-stock-reducer' ),
+				'desc_tip'          => false,
+				'default'           => ''
+			),
+			'expire_items' => array(
+				'title'             => __( 'Which Items Should Expire From Carts', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'select',
+				'default'           => 'no',
+				'options'           => array( 'no' => __( 'Expiration Disabled By Default', 'woocommerce-cart-stock-reducer' ),
+				                              'yes' => __( 'Expire Only Managed Items', 'woocommerce-cart-stock-reducer' ),
+				                              'all' => __( 'Expire All Items', 'woocommerce-cart-stock-reducer' ),
+				                              'never' => __( 'Never Expire Any Items (Cannot be overridden)', 'woocommerce-cart-stock-reducer' ),
+				),
+				'description'       => __( "You MUST set an 'Expire Time' below if you use this option", 'woocommerce-cart-stock-reducer' ),
+			),
+			'expire_time' => array(
+				'title'             => __( 'Expire Time', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'text',
+				'description'       => __( 'How long before item expires from cart', 'woocommerce-cart-stock-reducer' ),
+				'desc_tip'          => true,
+				'placeholder'       => 'Examples: 10 minutes, 1 hour, 6 hours, 1 day',
+				'default'           => ''
+			),
+			// @TODO I want to hide the following unless 'no' is selected above
+			'expire_categories' => array(
+				'title'             => __( 'Expire Categories', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'text',
+				'description'       => __( 'Comma separated list of WordPress categories to select items that will expire.  Empty means follow system default. ', 'woocommerce-cart-stock-reducer' ),
+				'desc_tip'          => false,
+				'default'           => ''
+			),
+
+			'expire_countdown' => array(
+				'title'             => __( 'Expire Countdown', 'woocommerce-cart-stock-reducer' ),
+				'type'              => 'select',
+				'label'             => __( 'Enable Expiration Countdown', 'woocommerce-cart-stock-reducer' ),
+				'default'           => 'always',
+				'options'           => array( 'always' => __( 'Always', 'woocommerce-cart-stock-reducer' ),
+											  'addonly' => __( 'Only when items are added', 'woocommerce-cart-stock-reducer' ),
+											  'never' => __( 'Never', 'woocommerce-cart-stock-reducer' ) ),
+				'description'       => __( 'When to display a countdown to expiration', 'woocommerce-cart-stock-reducer' ),
 			),
 			'stock_pending' => array(
 				'title'             => __( 'Pending Order Text', 'woocommerce-cart-stock-reducer' ),
@@ -1111,38 +1295,6 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				'description'       => sprintf( __( 'Enter text to be appended when the there are pending items in the users cart. %s will be replaced with the number of items in cart.', 'woocommerce-cart-stock-reducer' ), '%CSR_NUM_ITEMS%' ),
 				'desc_tip'          => false,
 				'default'           => sprintf( __( 'Pending orders include %s items already added to your cart.', 'woocommerce-cart-stock-reducer' ), '%CSR_NUM_ITEMS%' ),
-			),
-			'expire_items' => array(
-				'title'             => __( 'Expire Items', 'woocommerce-cart-stock-reducer' ),
-				'type'              => 'checkbox',
-				'label'             => __( 'Enable Item Expiration', 'woocommerce-cart-stock-reducer' ),
-				'default'           => 'no',
-				'description'       => __( "If checked, items that stock is managed for will expire from carts.  You MUST set an 'Expire Time' below if you use this option", 'woocommerce-cart-stock-reducer' ),
-			),
-			'expire_time' => array(
-				'title'             => __( 'Expire Time', 'woocommerce-cart-stock-reducer' ),
-				'type'              => 'text',
-				'description'       => __( 'How long before item expires from cart', 'woocommerce-cart-stock-reducer' ),
-				'desc_tip'          => true,
-				'placeholder'       => 'Examples: 10 minutes, 1 hour, 6 hours, 1 day',
-				'default'           => ''
-			),
-			'expire_countdown' => array(
-				'title'             => __( 'Expire Countdown', 'woocommerce-cart-stock-reducer' ),
-				'type'              => 'select',
-				'label'             => __( 'Enable Expiration Countdown', 'woocommerce-cart-stock-reducer' ),
-				'default'           => 'always',
-				'options'           => array( 'always' => __( 'Always', 'woocommerce-cart-stock-reducer' ),
-											  'addonly' => __( 'Only when items are added', 'woocommerce-cart-stock-reducer' ),
-											  'never' => __( 'Never', 'woocommerce-cart-stock-reducer' ) ),
-				'description'       => __( 'When to display a countdown to expiration', 'woocommerce-cart-stock-reducer' ),
-			),
-			'expire_categories' => array(
-				'title'             => __( 'Expire Categories', 'woocommerce-cart-stock-reducer' ),
-				'type'              => 'text',
-				'description'       => __( 'Comma separated list of WordPress categories to select items that will expire.  Empty means all items will expire. ', 'woocommerce-cart-stock-reducer' ),
-				'desc_tip'          => false,
-				'default'           => ''
 			),
 			'ignore_status' => array(
 				'title'             => __( 'Ignore Order Status', 'woocommerce-cart-stock-reducer' ),
