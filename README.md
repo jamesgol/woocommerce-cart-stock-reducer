@@ -1,10 +1,10 @@
 # WooCommerce Cart Stock Reducer #
 **Contributors:** jamesgol  
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GAXXM656QPNGY  
-**Tags:** woocommerce, cart, expire  
+**Tags:** woocommerce, cart, expire, countdown, stock  
 **Requires at least:** 4.0  
 **Tested up to:** 5.8.1  
-**Stable tag:** 3.50  
+**Stable tag:** 3.75  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -71,6 +71,12 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 ## Changelog ##
+### 3.75 ###
+* Use WordPress object cache if enabled (Another major speed boost)
+* Add configurable setting to refresh expiration time of cart items when new items are added, viewing cart, viewing checkout, or viewing checkout payment page
+* Allow categories to be used to specify which items to expire from carts
+* Allow reducing and expiring of items to be configured globally as well as per item
+
 ### 3.50 ###
 * Add support for removing products from composites/containers (Thanks photogenic89)
 * Major speed increase for busy sites
