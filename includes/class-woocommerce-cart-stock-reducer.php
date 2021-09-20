@@ -397,7 +397,13 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 				return true;
 			}
 		}
-		// @TODO Lookup cats
+		if ( !empty( $this->reducer_categories ) ) {
+			// Categories can override anything but the global setting 'never'
+			$cats = apply_filters( 'wc_csr_reducer_categories', explode(',', $this->reducer_categories ), $product_id );
+			if ( has_term( $cats, 'product_cat', $product_id ) ) {
+				return true;
+			}
+		}
 		if ( 'yes' === $this->cart_stock_reducer ) {
 			return true;
 		}
