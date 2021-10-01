@@ -53,7 +53,9 @@ class WC_CSR_Sessions  {
 	public function woocommerce_prevent_adjust_line_item_product_stock( $value, $item, $item_quantity ) {
 		if ( is_callable( array( $item, 'get_product' ) ) ) {
 			$product = $item->get_product();
-			$this->remove_cache_item( $product->get_id() );
+			if ( $product ) {
+				$this->remove_cache_item( $product->get_id() );
+			}
 		}
 
 		return $value;
