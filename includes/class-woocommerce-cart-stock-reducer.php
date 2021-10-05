@@ -1091,7 +1091,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 
 		if ( false === $this->checking_virtual_stock ) {
-			$never_virtual_whitelist = array( 'wc_reduce_stock_levels', 'render_product_columns', 'validate_props', 'render_is_in_stock_column', 'render_name_column' );
+			$never_virtual_whitelist = array( 'wc_reduce_stock_levels', 'render_product_columns', 'validate_props', 'render_is_in_stock_column', 'render_name_column', 'bulk_edit_save' );
 			if ( $this->trace_contains( apply_filters( 'wc_csr_whitelist_get_stock_quantity', $never_virtual_whitelist, $quantity, $product ) ) ) {
 				// For WooCommerce 3.x we need to make sure we return the real quantity to these functions
 				// otherwise they mark items as out of stock

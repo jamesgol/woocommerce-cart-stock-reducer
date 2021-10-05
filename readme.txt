@@ -72,7 +72,7 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 == Changelog ==
 = Dev =
-* Fix bug where a 'Quick Edit' on the backend could change actually stock if the product is in a users cart
+* Fix bug where a 'Quick Edit' or 'Bulk Edit' on the backend could change actually stock if the product is in a users cart
 
 = 3.75 =
 * Use WordPress object cache if enabled (Another major speed boost)
