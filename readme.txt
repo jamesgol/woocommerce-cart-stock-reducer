@@ -71,6 +71,9 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= Dev =
+* Fix bug where a 'Quick Edit' on the backend could change actually stock if the product is in a users cart
+
 = 3.75 =
 * Use WordPress object cache if enabled (Another major speed boost)
 * Add configurable setting to refresh expiration time of cart items when new items are added, viewing cart, viewing checkout, or viewing checkout payment page
