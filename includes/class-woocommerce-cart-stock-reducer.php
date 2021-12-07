@@ -1067,7 +1067,7 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 		}
 
 		// Make sure backend admin always shows real status
-		$contains_functions = array( 'render_product_columns', 'render_is_in_stock_column' );
+		$contains_functions = array( 'render_product_columns', 'render_is_in_stock_column', 'reserve_stock_for_order' );
 
 		if ( false === apply_filters( 'wc_csr_hide_out_of_stock_items', false, $this, $status, $product ) ) {
 			// If this is a product visibility check, don't check virtual status
