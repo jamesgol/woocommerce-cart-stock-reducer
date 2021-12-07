@@ -72,6 +72,7 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 == Changelog ==
 = Dev =
+* Keep reserve_stock_for_order from throwing exception when all items are in users cart
 * Fix bug where a 'Quick Edit' or 'Bulk Edit' on the backend could change actually stock if the product is in a users cart
 
 = 3.75 =
