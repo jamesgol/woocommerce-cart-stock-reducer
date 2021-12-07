@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: woocommerce, cart, expire, countdown, stock
 Requires at least: 4.0
 Tested up to: 5.8.1
-Stable tag: 3.75
+Stable tag: 3.85
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,7 +71,7 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
-= Dev =
+= 3.85 =
 * Keep reserve_stock_for_order from throwing exception when all items are in users cart
 * Fix bug where a 'Quick Edit' or 'Bulk Edit' on the backend could change actually stock if the product is in a users cart
 
