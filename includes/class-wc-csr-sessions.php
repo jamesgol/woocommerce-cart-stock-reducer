@@ -47,7 +47,18 @@ class WC_CSR_Sessions  {
 		add_action( 'woocommerce_variation_before_set_stock', array( $this, 'woocommerce_variation_before_set_stock' ), 10, 1 );
 		add_action( 'woocommerce_product_before_set_stock', array( $this, 'woocommerce_product_before_set_stock' ), 10, 1 );
 		add_filter( 'woocommerce_prevent_adjust_line_item_product_stock', array( $this, 'woocommerce_prevent_adjust_line_item_product_stock' ), 10, 3 );
+		add_action( 'wp_login', array( $this, 'wp_login' ), 11, 2 );
 
+	}
+
+	public function wp_login( $user_login, $user ) {
+		# When a user logs in they might have items in their cart already.  Purge the cache on those items so they are properly recalculated
+		$cart = WC()->cart;
+		if ( null !== $cart ) {
+			foreach ( $cart->cart_contents as $cart_id => $item ) {
+				$this->remove_cache_item( $item['product_id'], $item['variation_id'] );
+			}
+		}
 	}
 
 	public function woocommerce_prevent_adjust_line_item_product_stock( $value, $item, $item_quantity ) {
