@@ -39,6 +39,7 @@ function make_cart_stock_reducer_go_now( $integrations = array() ) {
 	}
 	if ( class_exists( 'WC_Integration' ) ) {
 		// Three... Two... One... MAKE ROCKET GO NOW!
+		define( 'WCCSR_VERSION', '3.90' );
 		require_once plugin_dir_path( __FILE__ ) . 'includes/class-woocommerce-cart-stock-reducer.php';
 		$integrations[] = 'WC_Cart_Stock_Reducer';
 		return $integrations;

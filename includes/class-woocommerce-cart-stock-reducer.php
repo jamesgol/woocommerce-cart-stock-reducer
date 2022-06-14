@@ -89,9 +89,9 @@ class WC_Cart_Stock_Reducer extends WC_Integration {
 
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.countdown' . $suffix . '.js', array( 'jquery', 'wc-csr-jquery-plugin' ), '2.1.0', true );
-		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.plugin' . $suffix . '.js', array( 'jquery' ), '2.1.0', true );
-		wp_register_style( 'wc-csr-styles', $this->plugins_url . 'assets/css/woocommerce-cart-stock-reducer.css', array(), '2.10' );
+		wp_register_script( 'wc-csr-jquery-countdown', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.countdown' . $suffix . '.js', array( 'jquery', 'wc-csr-jquery-plugin' ), WCCSR_VERSION, true );
+		wp_register_script( 'wc-csr-jquery-plugin', $this->plugins_url . 'assets/js/jquery-countdown/js/jquery.plugin' . $suffix . '.js', array( 'jquery' ), WCCSR_VERSION, true );
+		wp_register_style( 'wc-csr-styles', $this->plugins_url . 'assets/css/woocommerce-cart-stock-reducer.css', array(), WCCSR_VERSION );
 		add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
 
 		// Direct link to our settings page

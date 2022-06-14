@@ -71,6 +71,10 @@ https://docs.woocommerce.com/document/problems-with-large-amounts-of-data-not-sa
 
 
 == Changelog ==
+= Dev = 
+* Ensure JS/CSS are versioned properly
+* Allow using non-minimized JS if SCRIPT_DEBUG is set
+
 = 3.90 = 
 * Purge cache when a user logs in
 
