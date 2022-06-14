@@ -217,7 +217,7 @@ class WC_CSR_Sessions  {
 	}
 
 	public function get_cache_key( $item ) {
-		return "{$this->cache_prefix}_$item";
+		return $this->cache_prefix . '_' . WC_VERSION . '_' . WCCSR_VERSION . '_' . $item;
 	}
 
 	public function find_items_in_carts( $item, $use_cache = true ) {
